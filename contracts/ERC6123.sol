@@ -107,6 +107,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         //The initial margin (collateral) and the termination fee must be deposited into the contract
         uint256 marginAndFee = (initialMarginBuffer + initialTerminationFee) * 10**decimal;
+        uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
+
+        require(upfrontPayment == marginAndFee, "Invalid payment amount");
 
         require(
             IERC20(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
@@ -117,7 +120,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             msg.sender,
             _withParty,
             tradeHash,
-            _tradeData,
+            tradeID,
             _position,
             _paymentAmount,
             _initialSettlementData
@@ -163,12 +166,16 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         //The initial margin and the termination fee must be deposited into the contract
         uint256 marginAndFee = (initialMarginBuffer + initialTerminationFee) * 10**decimal;
 
+        uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
+        
+        require(upfrontPayment == marginAndFee, "Invalid payment amount"); 
+
         require(
             IERC20(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
             "Failed to transfer the initial margin + the termination fee"
         );
 
-        emit TradeConfirmed(msg.sender, tradeHash);
+        emit TradeConfirmed(msg.sender, tradeID);
     }
 
     function cancelTrade(
@@ -197,7 +204,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         delete pendingRequests[confirmationHash];
         tradeState = TradeState.Inactive;
 
-        emit TradeCanceled(msg.sender, tradeHash);
+        emit TradeCanceled(msg.sender, tradeID);
     }
 
     /**
