@@ -6,7 +6,7 @@ abstract contract ERC6123Storage {
     error obseleteFunction();
     error allSettlementsDone();
     error stateMustBeConfirmedOrSettled();
-    error invalidTradeID(string _tradeID);
+    error invalidTrade(string _tradeID);
     error invalidPaymentAmount(int256 _amount);
     error invalidPositionValue(int256 _position);
     error nothingToSwap(int256 _fixedRate, int256 _floatingRate);
@@ -153,6 +153,7 @@ abstract contract ERC6123Storage {
     TradeState internal tradeState;
 
     string public tradeID;
+    string tradeHash;
 
     uint256 internal initialMarginBuffer;
     uint256 internal initialTerminationFee;

@@ -38,6 +38,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     * _Terminati fees: 500000
     */
     constructor (
+        string memory _tradeID,
         string memory _irsTokenName,
         string memory _irsTokenSymbol,
         Types.IRS memory _irs,
@@ -47,6 +48,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         initialMarginBuffer = _initialMarginBuffer;
         initialTerminationFee = _initialTerminationFee;
         confirmationTime = 1 days;
+        tradeID = _tradeID;
     }
 
     function inceptTrade(
@@ -93,7 +95,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         ));
 
         pendingRequests[dataHash] = msg.sender;
-        tradeID = Strings.toString(dataHash);
+        tradeHash = Strings.toString(dataHash);
         inceptingTime = block.timestamp;
 
         uint8 decimal = IERC20(irs.settlementCurrency).decimals();
@@ -114,14 +116,14 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         emit TradeIncepted(
             msg.sender,
             _withParty,
-            tradeID,
+            tradeHash,
             _tradeData,
             _position,
             _paymentAmount,
             _initialSettlementData
         );
 
-        return tradeID;
+        return tradeHash;
     }
 
     
@@ -166,7 +168,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Failed to transfer the initial margin + the termination fee"
         );
 
-        emit TradeConfirmed(msg.sender, tradeID);
+        emit TradeConfirmed(msg.sender, tradeHash);
     }
 
     function cancelTrade(
@@ -195,7 +197,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         delete pendingRequests[confirmationHash];
         tradeState = TradeState.Inactive;
 
-        emit TradeCanceled(msg.sender, tradeID);
+        emit TradeCanceled(msg.sender, tradeHash);
     }
 
     /**
@@ -229,17 +231,17 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     /**-> NOT CLEAR: Why requesting trade termination after the trade has been settled ? */
     function requestTradeTermination(
-        string memory _tradeId,
+        string memory _tradeHash,
         int256 _terminationPayment,
         string memory _terminationTerms
     ) external override onlyCounterparty onlyWhenSettled onlyBeforeMaturity {
         if(
-            keccak256(abi.encodePacked(_tradeId)) != keccak256(abi.encodePacked(tradeID))
-        ) revert invalidTradeID(_tradeId);
+            keccak256(abi.encodePacked(_tradeHash)) != keccak256(abi.encodePacked(tradeHash))
+        ) revert invalidTrade(_tradeHash);
 
         uint256 terminationHash = uint256(keccak256(
             abi.encode(
-                _tradeId,
+                _tradeHash,
                 "terminate",
                 _terminationPayment,
                 _terminationTerms
@@ -248,11 +250,11 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         pendingRequests[terminationHash] = msg.sender;
 
-        emit TradeTerminationRequest(msg.sender, _tradeId, _terminationPayment, _terminationTerms);
+        emit TradeTerminationRequest(msg.sender, _tradeHash, _terminationPayment, _terminationTerms);
     }
 
     function confirmTradeTermination(
-        string memory _tradeId,
+        string memory _tradeHash,
         int256 _terminationPayment,
         string memory _terminationTerms
     ) external onlyCounterparty onlyWhenSettled onlyBeforeMaturity {
@@ -260,7 +262,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         uint256 confirmationhash = uint256(keccak256(
             abi.encode(
-                _tradeId,
+                _tradeHash,
                 "terminate",
                 _terminationPayment,
                 _terminationTerms
@@ -286,7 +288,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     }
 
     function cancelTradeTermination(
-        string memory _tradeId,
+        string memory _tradeHash,
         int256 _terminationPayment,
         string memory _terminationTerms
     ) external onlyWhenSettled onlyBeforeMaturity {
@@ -294,7 +296,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         uint256 confirmationHash = uint256(keccak256(
             abi.encode(
-                _tradeId,
+                _tradeHash,
                 "terminate",
                 _terminationPayment,
                 _terminationTerms
@@ -306,7 +308,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         delete pendingRequests[confirmationHash];
 
-        emit TradeTerminationCanceled(msg.sender, _tradeId, _terminationTerms);
+        emit TradeTerminationCanceled(msg.sender, _tradeHash, _terminationTerms);
     }
 
     /**
@@ -496,6 +498,10 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     function getTradeID() external view returns(string memory) {
         return tradeID;
+    }
+
+    function getTradeHash() external view returns(string memory) {
+        return tradeHash;
     }
 
     function getInceptingTime() external view returns(uint256) {
