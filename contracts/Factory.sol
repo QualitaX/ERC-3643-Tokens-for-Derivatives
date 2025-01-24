@@ -5,9 +5,17 @@ import "./Types.sol";
 import "./ERC6123.sol";
 
 contract Factory {
-    event contractDeployed(string tradeID,  address contractAddress);
+    struct Deployed {
+        string tradeID;
+        address contractAddress;
+    }
+
     error alreadyDeployed(string tradeID);
+
     mapping(string => bool) public isDeployed;
+    Deployed[] internal deployedContracts;
+
+    event contractDeployed(string tradeID,  address contractAddress);
 
     function deployForwardContract(
         string memory _tradeID,
@@ -28,7 +36,12 @@ contract Factory {
             _initialTerminationFee
         );
 
+        deployedContracts.push(Deployed({
+            tradeID: _tradeID,
+            contractAddress: address(forwardContract)
+        }));
         isDeployed[_tradeID] = true;
+
         emit contractDeployed(_tradeID, address(forwardContract));
     }
 }
