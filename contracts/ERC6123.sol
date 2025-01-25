@@ -10,8 +10,11 @@ import "./assets/ERC7586.sol";
 
 contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     event CollateralUpdated(string tradeID, address account, uint256 newCollateral);
-    event ContractSettled(string tradeID, address payer, address receiver, uint256 netSettlementAmount);
+    event LinkWithdrawn(string tradeID, address account, uint256 amount);
+    event ContractSettled(string tradeID, address payer, address receiver, uint256 netSettlementAmount, uint256 fixedRatePayment, uint256 floatingRatePayment);
     event MarginAndFeesWithdrawn(string tradeID, address account, uint256 margin, uint256 fees);
+    event SettlementForwderSet(string tradeID, address account, address forwarderAddress);
+    event CollateralAdjustementForwaderSet(string tradeID, address account, address forwarderAddress);
 
     modifier onlyCounterparty() {
         require(
@@ -29,14 +32,6 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         _;
     }
 
-    /**
-    * _irsTokenName: "ESR Forwards"
-    * _irsTokenSymbol: "TBF"
-    * _irs: ["0xd64d80b40af7607F565D8715B52bE1C3D5490322", "0xEaB123A890e2089188ea3682Df6687fedb5924D9", "0x22F420419c1084E78FF1C11B60838365C6eA4E68", 35600000, 0, 500000, 1736958300, 1736960100]
-    **** _irs: ["0x5B38Da6a701c568545dCfcB03FcB875f56beddC4", "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2", "0x78FD83768c7492aE537924c9658BE3D29D8ffFc1", 35600000, 0, 100000000, 1736860320, 1736862540]
-    * _initial Margin: 1000000
-    * _Terminati fees: 500000
-    */
     constructor (
         string memory _tradeID,
         string memory _irsTokenName,
@@ -64,12 +59,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         if(inceptor == _withParty)
             revert cannotInceptWithYourself(msg.sender, _withParty);
         require(
-            inceptor == irs.fixedRatePayer || inceptor == irs.floatingRatePayer,
-            "Only parties can incept trade"
-        );
-        require(
             _withParty == irs.fixedRatePayer || _withParty == irs.floatingRatePayer,
-            "Wrong 'withParty' address, MUST BE your counterparty"
+            "Wrong 'withParty' address, MUST BE the counterparty"
         );
         require(_position == 1 || _position == -1, "invalid position");
 
@@ -257,7 +248,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         pendingRequests[terminationHash] = msg.sender;
 
-        emit TradeTerminationRequest(msg.sender, _tradeHash, _terminationPayment, _terminationTerms);
+        emit TradeTerminationRequest(msg.sender, tradeID, _terminationPayment, _terminationTerms);
     }
 
     function confirmTradeTermination(
@@ -292,6 +283,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         terminateSwap();
 
         tradeState = TradeState.Terminated;
+
+        emit TradeTerminationConfirmed(msg.sender, tradeID, int256(terminationAmount), _terminationTerms);
     }
 
     function cancelTradeTermination(
@@ -315,7 +308,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         delete pendingRequests[confirmationHash];
 
-        emit TradeTerminationCanceled(msg.sender, _tradeHash, _terminationTerms);
+        emit TradeTerminationCanceled(msg.sender, tradeID, _terminationTerms);
     }
 
     /**
@@ -398,9 +391,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             burn(irs.fixedRatePayer, 10**principalDecimal);
             burn(irs.floatingRatePayer, 10**principalDecimal);
             _updateIRSReceipt(settlementAmount);
-            performSettlement(int256(settlementAmount), "");
+            performSettlement(int256(settlementAmount), tradeID);
 
-            emit ContractSettled(tradeID, payerParty, receiverParty, settlementAmount);
+            emit ContractSettled(tradeID, payerParty, receiverParty, settlementAmount, fixedRatePayment, floatingRatePayment);
         } else {
             settlementAmount = floatingRatePayment - fixedRatePayment;
             payerParty = irs.floatingRatePayer;
@@ -412,9 +405,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             burn(irs.fixedRatePayer, 10**principalDecimal);
             burn(irs.floatingRatePayer, 10**principalDecimal);
             _updateIRSReceipt(settlementAmount);
-            performSettlement(int256(settlementAmount), "");
+            performSettlement(int256(settlementAmount), tradeID);
 
-            emit ContractSettled(tradeID, payerParty, receiverParty, settlementAmount);
+            emit ContractSettled(tradeID, payerParty, receiverParty, settlementAmount, fixedRatePayment, floatingRatePayment);
         }
     }
 
@@ -438,10 +431,14 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     function setCollateralAdjustementForwarderAddress(address _address) external onlyCounterparty {
         collateralAdjustementForwarderAddress = _address;
+
+        emit CollateralAdjustementForwaderSet(tradeID, msg.sender, _address);
     }
 
     function setsettlementForwarderAddress(address _address) external onlyCounterparty {
         settlementForwarderAddress = _address;
+
+        emit SettlementForwderSet(tradeID, msg.sender, _address);
     }
 
     /**
@@ -459,19 +456,26 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         emit MarginAndFeesWithdrawn(tradeID, msg.sender, marginRequirements[msg.sender].marginBuffer, marginRequirements[msg.sender].terminationFee);
 
         marginRequirements[msg.sender].marginBuffer = 0;
-        marginRequirements[msg.sender].terminationFee = 0; 
+        marginRequirements[msg.sender].terminationFee = 0;
     }
 
     /**
      * @notice Allow withdraw of Link tokens from the contract
      * !!!!!   SECURE THIS FUNCTION FROM BEING CALLED BY NOT ALLOWED USERS !!!!!
      */
-    function withdrawLink() public {
+    function withdrawLink() public onlyAfterMaturity {
         LinkTokenInterface link = LinkTokenInterface(0x779877A7B0D9E8603169DdbD7836e478b4624789);
         require(
             link.transfer(msg.sender, link.balanceOf(address(this))),
             "Unable to transfer"
         );
+
+        emit LinkWithdrawn(tradeID, msg.sender, link.balanceOf(address(this)));
+    }
+
+    function getContractLINKBalance() external view returns(uint256) {
+        LinkTokenInterface link = LinkTokenInterface(0x779877A7B0D9E8603169DdbD7836e478b4624789);
+        return link.balanceOf(address(this));
     }
 
     /**---------------------- Internal Private and other view functions ----------------------*/
