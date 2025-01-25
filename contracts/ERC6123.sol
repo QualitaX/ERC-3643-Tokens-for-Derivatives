@@ -9,9 +9,9 @@ import "./ERC6123Storage.sol";
 import "./assets/ERC7586.sol";
 
 contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
-    event CollateralUpdated(address account, uint256 newCollateral);
-    event ContractSettled(address payer, address receiver, uint256 netSettlementAmount);
-    event MarginAndFeesWithdrawn(address account, uint256 margin, uint256 fees);
+    event CollateralUpdated(string tradeID, address account, uint256 newCollateral);
+    event ContractSettled(string tradeID, address payer, address receiver, uint256 netSettlementAmount);
+    event MarginAndFeesWithdrawn(string tradeID, address account, uint256 margin, uint256 fees);
 
     modifier onlyCounterparty() {
         require(
@@ -339,19 +339,19 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         uint256 netCollateralAmount;
         if(fixedRate == floatingRate) {
-            emit CollateralUpdated(address(0), 0);
+            emit CollateralUpdated(tradeID, address(0), 0);
         } else if(fixedRate > floatingRate) {
             uint256 currentCollateralAmount = marginCalls[irs.fixedRatePayer];
             netCollateralAmount = fixedPayment - floatingPayment;
             marginCalls[irs.fixedRatePayer] = currentCollateralAmount + netCollateralAmount;
 
-            emit CollateralUpdated(irs.fixedRatePayer, netCollateralAmount);
+            emit CollateralUpdated(tradeID, irs.fixedRatePayer, netCollateralAmount);
         } else {
             uint256 currentCollateralAmount = marginCalls[irs.floatingRatePayer];
             netCollateralAmount = floatingPayment - fixedPayment;
             marginCalls[irs.floatingRatePayer] = currentCollateralAmount + netCollateralAmount;
 
-            emit CollateralUpdated(irs.floatingRatePayer, netCollateralAmount);
+            emit CollateralUpdated(tradeID, irs.floatingRatePayer, netCollateralAmount);
         }
     }
 
@@ -400,7 +400,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             _updateIRSReceipt(settlementAmount);
             performSettlement(int256(settlementAmount), "");
 
-            emit ContractSettled(payerParty, receiverParty, settlementAmount);
+            emit ContractSettled(tradeID, payerParty, receiverParty, settlementAmount);
         } else {
             settlementAmount = floatingRatePayment - fixedRatePayment;
             payerParty = irs.floatingRatePayer;
@@ -414,7 +414,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             _updateIRSReceipt(settlementAmount);
             performSettlement(int256(settlementAmount), "");
 
-            emit ContractSettled(payerParty, receiverParty, settlementAmount);
+            emit ContractSettled(tradeID, payerParty, receiverParty, settlementAmount);
         }
     }
 
@@ -433,7 +433,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Failed to transfer the collateral"
         );
 
-        emit CollateralUpdated(msg.sender, marginRequirements[msg.sender].marginBuffer);
+        emit CollateralUpdated(tradeID, msg.sender, marginRequirements[msg.sender].marginBuffer);
     }
 
     function setCollateralAdjustementForwarderAddress(address _address) external onlyCounterparty {
@@ -456,11 +456,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Failed to transfer the initial margin and the termination fee"
         );
 
-        emit MarginAndFeesWithdrawn(
-            msg.sender,
-            marginRequirements[msg.sender].marginBuffer,
-            marginRequirements[msg.sender].terminationFee
-        );
+        emit MarginAndFeesWithdrawn(tradeID, msg.sender, marginRequirements[msg.sender].marginBuffer, marginRequirements[msg.sender].terminationFee);
 
         marginRequirements[msg.sender].marginBuffer = 0;
         marginRequirements[msg.sender].terminationFee = 0; 

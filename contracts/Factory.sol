@@ -24,7 +24,7 @@ contract Factory {
         Types.IRS memory _irs,
         uint256 _initialMarginBuffer,
         uint256 _initialTerminationFee
-    ) public {
+    ) external {
         if (isDeployed[_tradeID]) revert alreadyDeployed(_tradeID);
 
         ERC6123 forwardContract = new ERC6123{salt: bytes32(abi.encodePacked(_tradeID))}(
@@ -43,5 +43,9 @@ contract Factory {
         isDeployed[_tradeID] = true;
 
         emit contractDeployed(_tradeID, address(forwardContract));
+    }
+
+    function getDeployedContracts() external view returns (Deployed[] memory) {
+        return deployedContracts;
     }
 }
