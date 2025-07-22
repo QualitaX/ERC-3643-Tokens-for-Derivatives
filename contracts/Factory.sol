@@ -15,7 +15,7 @@ contract Factory {
     mapping(string => bool) public isDeployed;
     Deployed[] internal deployedContracts;
 
-    event contractDeployed(string tradeID,  address contractAddress);
+    event ContractDeployed(string tradeID,  address deployer, address contractAddress);
 
     function deployForwardContract(
         string memory _tradeID,
@@ -42,7 +42,7 @@ contract Factory {
         }));
         isDeployed[_tradeID] = true;
 
-        emit contractDeployed(_tradeID, address(forwardContract));
+        emit ContractDeployed(_tradeID, msg.sender, address(forwardContract));
     }
 
     function getDeployedContracts() external view returns (Deployed[] memory) {

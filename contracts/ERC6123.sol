@@ -5,11 +5,12 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
 import "./interfaces/IERC6123.sol";
+import "./interfaces/IIDentityCheck.sol";
 import "./ERC6123Storage.sol";
 import "./assets/ERC7586.sol";
 
 contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
-    event CollateralUpdated(string tradeID, address account, uint256 newCollateral);
+    event CollateralUpdated(string tradeID, address updater, uint256 collateralAmount);
     event LinkWithdrawn(string tradeID, address account, uint256 amount);
     event ContractSettled(string tradeID, address payer, address receiver, uint256 netSettlementAmount, uint256 fixedRatePayment, uint256 floatingRatePayment);
     event MarginAndFeesWithdrawn(string tradeID, address account, uint256 margin, uint256 fees);
@@ -38,8 +39,14 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         string memory _irsTokenSymbol,
         Types.IRS memory _irs,
         uint256 _initialMarginBuffer,
-        uint256 _initialTerminationFee
-    ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs) {
+        uint256 _initialTerminationFee,
+        address _identityCheckAddress,
+        address _identityRegistryAddress,
+        address _complianceContractAddress
+    ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _identityCheckAddress, _complianceContractAddress, _identityRegistryAddress) {
+        IIDentityCheck(_identityCheckAddress).checkUserVerification(_irs.fixedRatePayer);
+        IIDentityCheck(_identityCheckAddress).checkUserVerification(_irs.floatingRatePayer);
+
         initialMarginBuffer = _initialMarginBuffer;
         initialTerminationFee = _initialTerminationFee;
         confirmationTime = 1 days;
@@ -63,6 +70,12 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Wrong 'withParty' address, MUST BE the counterparty"
         );
         require(_position == 1 || _position == -1, "invalid position");
+
+        IIDentityCheck(identityCheckAddress).checkUserVerification(inceptor);
+        IIDentityCheck(identityCheckAddress).checkUserVerification(_withParty);
+        IIDentityCheck(identityCheckAddress).checkTokenPaused();
+        IIDentityCheck(identityCheckAddress).checkWalletFrozen(inceptor);
+
 
         if(_position == 1) {
             irs.fixedRatePayer = msg.sender;
@@ -129,6 +142,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         string memory _initialSettlementData
     ) external override onlyWhenTradeIncepted onlyWithinConfirmationTime {
         address inceptingParty = otherParty();
+
+        IIDentityCheck(identityCheckAddress).checkUserVerification(msg.sender);
+        IIDentityCheck(identityCheckAddress).checkUserVerification(_withParty);
 
         uint256 confirmationHash = uint256(keccak256(
             abi.encode(
@@ -358,6 +374,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Only the settlement forwarder can call this function"
         );
 
+        IIDentityCheck(identityCheckAddress).checkUserVerification(irs.fixedRatePayer);
+        IIDentityCheck(identityCheckAddress).checkUserVerification(irs.floatingRatePayer);
+
         uint256 principalDecimal = IERC20(irs.settlementCurrency).decimals();
 
         fixedRatePayment = marginRequirements[irs.fixedRatePayer].marginBuffer - initialMarginBuffer;
@@ -415,6 +434,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     * @notice Trabsfers the collateral to the smart contract after receiving a margin call
     */
     function postCollateral() external onlyCounterparty onlyWhenTradeConfirmed onlyBeforeMaturity {
+        IIDentityCheck(identityCheckAddress).checkUserVerification(msg.sender);
+
         uint256 currentMargin = marginCalls[msg.sender];
         uint256 buffer = marginRequirements[msg.sender].marginBuffer;
 
@@ -446,6 +467,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     *         The margin buffer and the initial fees are reset to 0 after the withdrawal
     */
     function withdrawInitialMarginAndTerminationFees() external onlyCounterparty onlyAfterMaturity {
+        IIDentityCheck(identityCheckAddress).checkUserVerification(msg.sender);
+
         uint256 amount = marginRequirements[msg.sender].marginBuffer + marginRequirements[msg.sender].terminationFee;
         
         require(

@@ -3,11 +3,16 @@ pragma solidity ^0.8.19;
 
 import "../interfaces/IERC7586.sol";
 import "../interfaces/ITreehouse.sol";
+import "../interfaces/ICompliance.sol";
 import "./IRSToken.sol";
 
 abstract contract ERC7586 is IERC7586, IRSToken {
     uint256 internal settlementAmount;
     uint256 internal terminationAmount;
+
+    address identityCheckAddress;
+    address complianceContractAddress;
+    address identityRegistryAddress;
     
     address internal receiverParty;
     address internal payerParty;
@@ -17,9 +22,21 @@ abstract contract ERC7586 is IERC7586, IRSToken {
     constructor(
         string memory _irsTokenName,
         string memory _irsTokenSymbol,
-        Types.IRS memory _irs
+        Types.IRS memory _irs,
+        address _identityCheckAddress,
+        address _complianceContractAddress,
+        address _identityRegistryAddress
     ) IRSToken(_irsTokenName, _irsTokenSymbol) {
         irs = _irs;
+        identityCheckAddress = _identityCheckAddress;
+        complianceContractAddress = _complianceContractAddress;
+        identityRegistryAddress = _identityRegistryAddress;
+
+        require(_irs.fixedRatePayer != address(0), "Fixed rate payer cannot be zero address");
+        require(_irs.floatingRatePayer != address(0), "Floating rate payer cannot be zero address");
+        require(_irs.settlementCurrency != address(0), "Settlement currency cannot be zero address");
+        require(_irs.notionalAmount > 0, "Notional amount must be greater than zero");
+        require(_irs.startingDate < _irs.maturityDate, "Starting date must be before maturity date");
 
         // one token minted for each settlement cycle per counterparty
         uint256 balance =  1 ether;
