@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import {LinkTokenInterface} from "@chainlink/contracts/src/v0.8/shared/interfaces/LinkTokenInterface.sol";
 
 import "./interfaces/IERC6123.sol";
-import "./interfaces/IIDentityCheck.sol";
 import "./ERC6123Storage.sol";
 import "./assets/ERC7586.sol";
 
@@ -44,8 +43,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         address _identityRegistryAddress,
         address _complianceContractAddress
     ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _identityCheckAddress, _complianceContractAddress, _identityRegistryAddress) {
-        IIDentityCheck(_identityCheckAddress).checkUserVerification(_irs.fixedRatePayer);
-        IIDentityCheck(_identityCheckAddress).checkUserVerification(_irs.floatingRatePayer);
+        IParticipantRegistry(_identityCheckAddress).checkUserVerification(_irs.fixedRatePayer);
+        IParticipantRegistry(_identityCheckAddress).checkUserVerification(_irs.floatingRatePayer);
 
         initialMarginBuffer = _initialMarginBuffer;
         initialTerminationFee = _initialTerminationFee;
@@ -71,11 +70,10 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         );
         require(_position == 1 || _position == -1, "invalid position");
 
-        IIDentityCheck(identityCheckAddress).checkUserVerification(inceptor);
-        IIDentityCheck(identityCheckAddress).checkUserVerification(_withParty);
-        IIDentityCheck(identityCheckAddress).checkTokenPaused();
-        IIDentityCheck(identityCheckAddress).checkWalletFrozen(inceptor);
-
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(inceptor);
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(_withParty);
+        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
+        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(inceptor);
 
         if(_position == 1) {
             irs.fixedRatePayer = msg.sender;
@@ -114,6 +112,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
 
         require(upfrontPayment == marginAndFee, "Invalid payment amount");
+        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(inceptor, address(this), marginAndFee);
 
         require(
             IERC20(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
@@ -143,8 +142,10 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     ) external override onlyWhenTradeIncepted onlyWithinConfirmationTime {
         address inceptingParty = otherParty();
 
-        IIDentityCheck(identityCheckAddress).checkUserVerification(msg.sender);
-        IIDentityCheck(identityCheckAddress).checkUserVerification(_withParty);
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(msg.sender);
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(_withParty);
+        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
+        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(msg.sender);
 
         uint256 confirmationHash = uint256(keccak256(
             abi.encode(
@@ -175,7 +176,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
         
-        require(upfrontPayment == marginAndFee, "Invalid payment amount"); 
+        require(upfrontPayment == marginAndFee, "Invalid payment amount");
+        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(msg.sender, address(this), marginAndFee);
 
         require(
             IERC20(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
@@ -374,9 +376,6 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Only the settlement forwarder can call this function"
         );
 
-        IIDentityCheck(identityCheckAddress).checkUserVerification(irs.fixedRatePayer);
-        IIDentityCheck(identityCheckAddress).checkUserVerification(irs.floatingRatePayer);
-
         uint256 principalDecimal = IERC20(irs.settlementCurrency).decimals();
 
         fixedRatePayment = marginRequirements[irs.fixedRatePayer].marginBuffer - initialMarginBuffer;
@@ -434,7 +433,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     * @notice Trabsfers the collateral to the smart contract after receiving a margin call
     */
     function postCollateral() external onlyCounterparty onlyWhenTradeConfirmed onlyBeforeMaturity {
-        IIDentityCheck(identityCheckAddress).checkUserVerification(msg.sender);
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(msg.sender);
 
         uint256 currentMargin = marginCalls[msg.sender];
         uint256 buffer = marginRequirements[msg.sender].marginBuffer;
@@ -467,7 +466,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     *         The margin buffer and the initial fees are reset to 0 after the withdrawal
     */
     function withdrawInitialMarginAndTerminationFees() external onlyCounterparty onlyAfterMaturity {
-        IIDentityCheck(identityCheckAddress).checkUserVerification(msg.sender);
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(msg.sender);
 
         uint256 amount = marginRequirements[msg.sender].marginBuffer + marginRequirements[msg.sender].terminationFee;
         

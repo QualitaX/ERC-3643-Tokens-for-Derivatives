@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "../interfaces/IERC7586.sol";
 import "../interfaces/ITreehouse.sol";
 import "../interfaces/ICompliance.sol";
+import "../interfaces/IParticipantRegistry.sol";
 import "./IRSToken.sol";
 
 abstract contract ERC7586 is IERC7586, IRSToken {
@@ -86,6 +87,12 @@ abstract contract ERC7586 is IERC7586, IRSToken {
     * @notice Transfer the net settlement amount to the receiver account.
     */
     function swap() public returns(bool) {
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(address(this));
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(receiverParty);
+        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
+        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(address(this));
+        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(address(this), receiverParty, settlementAmount);
+
         IERC20(irs.settlementCurrency).transfer(receiverParty, settlementAmount);
 
         emit Swap(receiverParty, settlementAmount);
@@ -98,6 +105,12 @@ abstract contract ERC7586 is IERC7586, IRSToken {
     }
 
     function terminateSwap() public {
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(address(this));
+        IParticipantRegistry(identityCheckAddress).checkUserVerification(terminationReceiver);
+        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
+        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(address(this));
+        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(address(this), terminationReceiver, terminationAmount);
+
         IERC20(irs.settlementCurrency).transfer(terminationReceiver, terminationAmount);
     }
 }

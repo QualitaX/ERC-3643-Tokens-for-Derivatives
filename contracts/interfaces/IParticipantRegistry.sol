@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-interface IIDentityCheck {
+interface IParticipantRegistry {
     /**
      * @dev Check if the user is verified in the Identity Registry.
      * @param _user The address of the user to check.

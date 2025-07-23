@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import "../interfaces/ICompliance.sol";
 import "./interfaces/ITREXSuite.sol";
 
-contract IdentityCheck {
+contract ParticipantRegistry {
     address trexSuiteAddress;
 
     error userNotVerified(address user);
