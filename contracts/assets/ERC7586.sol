@@ -6,12 +6,13 @@ import "../interfaces/ITreehouse.sol";
 import "../interfaces/ICompliance.sol";
 import "../interfaces/IParticipantRegistry.sol";
 import "./IRSToken.sol";
+import "../Compliance/interfaces/IToken.sol";
 
 abstract contract ERC7586 is IERC7586, IRSToken {
     uint256 internal settlementAmount;
     uint256 internal terminationAmount;
 
-    address identityCheckAddress;
+    address participantRegistyAddress;
     address complianceContractAddress;
     address identityRegistryAddress;
     
@@ -24,12 +25,12 @@ abstract contract ERC7586 is IERC7586, IRSToken {
         string memory _irsTokenName,
         string memory _irsTokenSymbol,
         Types.IRS memory _irs,
-        address _identityCheckAddress,
+        address _participantRegistyAddress,
         address _complianceContractAddress,
         address _identityRegistryAddress
     ) IRSToken(_irsTokenName, _irsTokenSymbol) {
         irs = _irs;
-        identityCheckAddress = _identityCheckAddress;
+        participantRegistyAddress = _participantRegistryAddress;
         complianceContractAddress = _complianceContractAddress;
         identityRegistryAddress = _identityRegistryAddress;
 
@@ -85,15 +86,10 @@ abstract contract ERC7586 is IERC7586, IRSToken {
 
     /**
     * @notice Transfer the net settlement amount to the receiver account.
+    * @notice All compliance checks are performed by the token contract.
     */
     function swap() public returns(bool) {
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(address(this));
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(receiverParty);
-        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
-        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(address(this));
-        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(address(this), receiverParty, settlementAmount);
-
-        IERC20(irs.settlementCurrency).transfer(receiverParty, settlementAmount);
+        IToken(irs.settlementCurrency).transfer(receiverParty, settlementAmount);
 
         emit Swap(receiverParty, settlementAmount);
 
@@ -104,13 +100,13 @@ abstract contract ERC7586 is IERC7586, IRSToken {
         return true;
     }
 
+    /**
+    * @notice Terminate the Swap and Transfer the termination amount to the termination receiver account.
+    * @notice All compliance checks are performed by the token contract.
+    * @dev This function is called when the swap is terminated before maturity.
+    * @dev The termination receiver is the party that receives the termination amount.
+    */
     function terminateSwap() public {
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(address(this));
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(terminationReceiver);
-        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
-        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(address(this));
-        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(address(this), terminationReceiver, terminationAmount);
-
-        IERC20(irs.settlementCurrency).transfer(terminationReceiver, terminationAmount);
+        IToken(irs.settlementCurrency).transfer(terminationReceiver, terminationAmount);
     }
 }

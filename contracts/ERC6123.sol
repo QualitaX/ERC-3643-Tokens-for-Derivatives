@@ -39,7 +39,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         Types.IRS memory _irs,
         uint256 _initialMarginBuffer,
         uint256 _initialTerminationFee,
-        address _identityCheckAddress,
+        address _participantAddress,
         address _identityRegistryAddress,
         address _complianceContractAddress
     ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _identityCheckAddress, _complianceContractAddress, _identityRegistryAddress) {
@@ -70,11 +70,6 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         );
         require(_position == 1 || _position == -1, "invalid position");
 
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(inceptor);
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(_withParty);
-        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
-        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(inceptor);
-
         if(_position == 1) {
             irs.fixedRatePayer = msg.sender;
             irs.floatingRatePayer = _withParty;
@@ -100,7 +95,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         tradeHash = Strings.toString(dataHash);
         inceptingTime = block.timestamp;
 
-        uint8 decimal = IERC20(irs.settlementCurrency).decimals();
+        uint8 decimal = IToken(irs.settlementCurrency).decimals();
 
         marginRequirements[msg.sender] = Types.MarginRequirement({
             marginBuffer: initialMarginBuffer * 10**decimal,
@@ -112,10 +107,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
 
         require(upfrontPayment == marginAndFee, "Invalid payment amount");
-        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(inceptor, address(this), marginAndFee);
 
         require(
-            IERC20(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
+            IToken(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
             "Failed to transfer the initial margin + the termination fee"
         );
 
@@ -142,11 +136,6 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     ) external override onlyWhenTradeIncepted onlyWithinConfirmationTime {
         address inceptingParty = otherParty();
 
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(msg.sender);
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(_withParty);
-        IParticipantRegistry(identityCheckAddress).checkTokenPaused();
-        IParticipantRegistry(identityCheckAddress).checkWalletFrozen(msg.sender);
-
         uint256 confirmationHash = uint256(keccak256(
             abi.encode(
                 _withParty,
@@ -164,7 +153,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         delete pendingRequests[confirmationHash];
         tradeState = TradeState.Confirmed;
 
-        uint256 decimal = IERC20(irs.settlementCurrency).decimals();
+        uint256 decimal = IToken(irs.settlementCurrency).decimals();
 
         marginRequirements[msg.sender] = Types.MarginRequirement({
             marginBuffer: initialMarginBuffer * 10**decimal,
@@ -173,14 +162,11 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         //The initial margin and the termination fee must be deposited into the contract
         uint256 marginAndFee = (initialMarginBuffer + initialTerminationFee) * 10**decimal;
-
         uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
         
         require(upfrontPayment == marginAndFee, "Invalid payment amount");
-        IParticipantRegistry(identityCheckAddress).checkTransferCompliance(msg.sender, address(this), marginAndFee);
-
         require(
-            IERC20(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
+            IToken(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
             "Failed to transfer the initial margin + the termination fee"
         );
 
@@ -342,7 +328,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         uint256 notional = irs.notionalAmount;
         int256 fixedRate = irs.swapRate;
         int256 floatingRate = ITreehouse(treehouseContractAddress).getRollingAvgEsrForNdays(7) + irs.spread;
-        uint256 principalDecimal = IERC20(irs.settlementCurrency).decimals();
+        uint256 principalDecimal = IToken(irs.settlementCurrency).decimals();
         uint256 rateDecimal = ITreehouse(treehouseContractAddress).decimals();
 
         uint256 fixedPayment = notional * uint256(fixedRate) * 10**principalDecimal * 100 / (10**rateDecimal * 36525);
@@ -376,14 +362,15 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Only the settlement forwarder can call this function"
         );
 
-        uint256 principalDecimal = IERC20(irs.settlementCurrency).decimals();
+        uint256 principalDecimal = IToken(irs.settlementCurrency).decimals();
 
         fixedRatePayment = marginRequirements[irs.fixedRatePayer].marginBuffer - initialMarginBuffer;
         floatingRatePayment = marginRequirements[irs.floatingRatePayer].marginBuffer - initialMarginBuffer;
 
         if(fixedRatePayment == floatingRatePayment) {
-            burn(irs.fixedRatePayer, 10**principalDecimal);
-            burn(irs.floatingRatePayer, 10**principalDecimal);
+            uint256 irsTokenUnit = 10**decimals();
+            burn(irs.fixedRatePayer, irsTokenUnit);
+            burn(irs.floatingRatePayer, irsTokenUnit);
 
             marginCalls[irs.fixedRatePayer] = 0;
             marginCalls[irs.floatingRatePayer] = 0;
@@ -406,8 +393,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             marginRequirements[payerParty].marginBuffer = marginRequirements[payerParty].marginBuffer - settlementAmount;
             marginCalls[payerParty] = 0;
 
-            burn(irs.fixedRatePayer, 10**principalDecimal);
-            burn(irs.floatingRatePayer, 10**principalDecimal);
+            uint256 irsTokenUnit = 10**decimals();
+            burn(irs.fixedRatePayer, irsTokenUnit);
+            burn(irs.floatingRatePayer, irsTokenUnit);
             _updateIRSReceipt(settlementAmount);
             performSettlement(int256(settlementAmount), tradeID);
 
@@ -420,8 +408,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             marginRequirements[payerParty].marginBuffer = marginRequirements[payerParty].marginBuffer - settlementAmount;
             marginCalls[payerParty] = 0;
 
-            burn(irs.fixedRatePayer, 10**principalDecimal);
-            burn(irs.floatingRatePayer, 10**principalDecimal);
+            uint256 irsTokenUnit = 10**decimals();
+            burn(irs.fixedRatePayer, irsTokenUnit);
+            burn(irs.floatingRatePayer, irsTokenUnit);
             _updateIRSReceipt(settlementAmount);
             performSettlement(int256(settlementAmount), tradeID);
 
@@ -433,8 +422,6 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     * @notice Trabsfers the collateral to the smart contract after receiving a margin call
     */
     function postCollateral() external onlyCounterparty onlyWhenTradeConfirmed onlyBeforeMaturity {
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(msg.sender);
-
         uint256 currentMargin = marginCalls[msg.sender];
         uint256 buffer = marginRequirements[msg.sender].marginBuffer;
 
@@ -442,7 +429,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         marginRequirements[msg.sender].marginBuffer = buffer + currentMargin;
         
         require(
-            IERC20(irs.settlementCurrency).transferFrom(msg.sender, address(this), currentMargin),
+            IToken(irs.settlementCurrency).transferFrom(msg.sender, address(this), currentMargin),
             "Failed to transfer the collateral"
         );
 
@@ -466,12 +453,10 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     *         The margin buffer and the initial fees are reset to 0 after the withdrawal
     */
     function withdrawInitialMarginAndTerminationFees() external onlyCounterparty onlyAfterMaturity {
-        IParticipantRegistry(identityCheckAddress).checkUserVerification(msg.sender);
-
         uint256 amount = marginRequirements[msg.sender].marginBuffer + marginRequirements[msg.sender].terminationFee;
         
         require(
-            IERC20(irs.settlementCurrency).transfer(msg.sender, amount),
+            IToken(irs.settlementCurrency).transfer(msg.sender, amount),
             "Failed to transfer the initial margin and the termination fee"
         );
 
@@ -484,6 +469,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     /**
      * @notice Allow withdraw of Link tokens from the contract
      * !!!!!   SECURE THIS FUNCTION FROM BEING CALLED BY NOT ALLOWED USERS !!!!!
+     * !!!!!   WITHDRAWAL SHOULD ALSO BE POSSIBLE IN CASE OF TERMINATION   !!!!!
      */
     function withdrawLink() public onlyAfterMaturity {
         LinkTokenInterface link = LinkTokenInterface(0x779877A7B0D9E8603169DdbD7836e478b4624789);
