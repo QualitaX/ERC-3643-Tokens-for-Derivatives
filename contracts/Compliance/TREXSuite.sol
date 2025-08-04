@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 contract TREXSuite {
     address constant internal complianceContractAddress = address(0);
-    address constant internal identityRegistryAddress = address(0);
+    address constant internal identityRegistryAddress = address(0x71a027b89bd4fc5245cf38faC4b02C68fD0A9018);
     address constant internal claimTopicsRegistryAddress = address(0);
     address constant internal trustedIssuersRegistryAddress = address(0);
     address constant internal token = address(0);

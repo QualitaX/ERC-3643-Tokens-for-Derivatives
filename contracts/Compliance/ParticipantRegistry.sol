@@ -6,6 +6,8 @@ import "./interfaces/ITREXSuite.sol";
 
 contract ParticipantRegistry {
     address trexSuiteAddress;
+    address constant internal identityRegistryAddress = address(0x71a027b89bd4fc5245cf38faC4b02C68fD0A9018);
+    address constant internal tokenAddress = address(0x97d66cb700D69F3059F2ad482A49A5429F67b7f7);
 
     error userNotVerified(address user);
     error transferNotAllowed(address from, address to, uint256 amount);
@@ -18,7 +20,7 @@ contract ParticipantRegistry {
     }
 
     function checkUserVerification(address _user) external view {
-        address identityRegistryAddress = ITREXSuite(trexSuiteAddress).getIdentityRegistryAddress();
+        //address identityRegistryAddress = ITREXSuite(trexSuiteAddress).getIdentityRegistryAddress();
         require(identityRegistryAddress != address(0), "Identity registry address is not set");
         ICompliance identityRegistry = ICompliance(identityRegistryAddress);
         if (!identityRegistry.isVerified(_user)) {
@@ -26,17 +28,8 @@ contract ParticipantRegistry {
         }
     }
 
-    function checkTransferCompliance(address _from, address _to, uint256 _amount) external view {
-        address complianceContractAddress = ITREXSuite(trexSuiteAddress).getComplianceContractAddress();
-        require(complianceContractAddress != address(0), "Compliance contract address is not set");
-        ICompliance compliance = ICompliance(complianceContractAddress);
-        if (!compliance.canTransfer(_from, _to, _amount)) {
-            revert transferNotAllowed(_from, _to, _amount);
-        }
-    }
-
     function checkTokenPaused() external view {
-        address tokenAddress = ITREXSuite(trexSuiteAddress).getTokenAddress();
+        //address tokenAddress = ITREXSuite(trexSuiteAddress).getTokenAddress();
         require(tokenAddress != address(0), "Token address is not set");
         ICompliance token = ICompliance(tokenAddress);
         if (token.paused()) {
@@ -45,7 +38,7 @@ contract ParticipantRegistry {
     }
 
     function checkWalletFrozen(address _user) external view {
-        address tokenAddress = ITREXSuite(trexSuiteAddress).getTokenAddress();
+        //address tokenAddress = ITREXSuite(trexSuiteAddress).getTokenAddress();
         require(tokenAddress != address(0), "Token address is not set");
         ICompliance token = ICompliance(tokenAddress);
         if(token.isFrozen(_user)) {

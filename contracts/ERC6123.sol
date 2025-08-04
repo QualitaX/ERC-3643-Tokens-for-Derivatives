@@ -39,12 +39,12 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         Types.IRS memory _irs,
         uint256 _initialMarginBuffer,
         uint256 _initialTerminationFee,
-        address _participantAddress,
-        address _identityRegistryAddress,
-        address _complianceContractAddress
-    ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _identityCheckAddress, _complianceContractAddress, _identityRegistryAddress) {
-        IParticipantRegistry(_identityCheckAddress).checkUserVerification(_irs.fixedRatePayer);
-        IParticipantRegistry(_identityCheckAddress).checkUserVerification(_irs.floatingRatePayer);
+        address _participantRegistryContractAddress,
+        address _identityRegistryAddress
+        //address _complianceContractAddress
+    ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _participantRegistryContractAddress, _identityRegistryAddress) {
+        IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.fixedRatePayer);
+        IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.floatingRatePayer);
 
         initialMarginBuffer = _initialMarginBuffer;
         initialTerminationFee = _initialTerminationFee;
