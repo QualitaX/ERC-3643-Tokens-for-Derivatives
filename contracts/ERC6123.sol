@@ -362,7 +362,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             "Only the settlement forwarder can call this function"
         );
 
-        uint256 principalDecimal = IToken(irs.settlementCurrency).decimals();
+        //uint256 principalDecimal = IToken(irs.settlementCurrency).decimals();
 
         fixedRatePayment = marginRequirements[irs.fixedRatePayer].marginBuffer - initialMarginBuffer;
         floatingRatePayment = marginRequirements[irs.floatingRatePayer].marginBuffer - initialMarginBuffer;

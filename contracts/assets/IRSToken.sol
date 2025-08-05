@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.19;
 
-import "../interfaces/IERC20.sol";
+//import "../interfaces/IERC20.sol";
+import "../Compliance/interfaces/IToken.sol";
 import "../Types.sol";
 
 /**
@@ -11,7 +12,7 @@ import "../Types.sol";
 *         When tokens are transferred to an account, the ownership (fixedRatePayer or floatingRatePayer) is also transferred.
 *         The contract doesn't support partial transfer of tokens. All the balance must be transferred for the transaction to be successful.
 */
-contract IRSToken is IERC20 {
+abstract contract IRSToken is IToken {
     Types.IRS internal irs;
 
     modifier onlyBeforeMaturity() {
@@ -39,11 +40,11 @@ contract IRSToken is IERC20 {
         _symbol = symbol_;
     }
 
-    function name() public view virtual override returns (string memory) {
+    function name() public view virtual returns (string memory) {
         return _name;
     }
 
-    function symbol() public view virtual override returns (string memory) {
+    function symbol() public view virtual returns (string memory) {
         return _symbol;
     }
 
@@ -137,7 +138,7 @@ contract IRSToken is IERC20 {
         _afterTokenTransfer(from, to, amount);
     }
 
-    function mint(address account, uint256 amount) public virtual override returns (bool) {
+    function mint(address account, uint256 amount) public virtual override {
         require(account != address(0), "ERC20: mint to the zero address");
 
         _beforeTokenTransfer(address(0), account, amount);
@@ -151,11 +152,9 @@ contract IRSToken is IERC20 {
         emit Transfer(address(0), account, amount);
 
         _afterTokenTransfer(address(0), account, amount);
-
-        return true;
     }
 
-    function burn(address account, uint256 amount) public virtual override returns (bool) {
+    function burn(address account, uint256 amount) public virtual {
         require(account != address(0), "ERC20: burn from the zero address");
 
         _beforeTokenTransfer(account, address(0), amount);
@@ -171,8 +170,6 @@ contract IRSToken is IERC20 {
         emit Transfer(account, address(0), amount);
 
         _afterTokenTransfer(account, address(0), amount);
-
-        return true;
     }
 
     function _approve(
@@ -206,11 +203,47 @@ contract IRSToken is IERC20 {
         address to,
         uint256 amount
     ) internal virtual {}
-
     function _afterTokenTransfer(
         address from,
         address to,
         uint256 amount
     ) internal virtual {}
-
+    function setName(string calldata name_) external {}
+    function setSymbol(string calldata symbol_) external {}
+    function setOnchainID(address _onchainID) external {}
+    function pause() external {}
+    function unpause() external {}
+    function setAddressFrozen(address _userAddress, bool _freeze) external {}
+    function freezePartialTokens(address _userAddress, uint256 _amount) external {}
+    function unfreezePartialTokens(address _userAddress, uint256 _amount) external {}
+    function setIdentityRegistry(address _identityRegistry) external {}
+    function setCompliance(address _compliance) external {}
+    function forcedTransfer(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) external returns (bool) {}
+    function recoveryAddress(
+        address _lostWallet,
+        address _newWallet,
+        address _investorOnchainID
+    ) external returns (bool) {}
+    function batchTransfer(address[] calldata _toList, uint256[] calldata _amounts) external {}
+    function batchForcedTransfer(
+        address[] calldata _fromList,
+        address[] calldata _toList,
+        uint256[] calldata _amounts
+    ) external {}
+    function batchMint(address[] calldata _toList, uint256[] calldata _amounts) external {}
+    function batchBurn(address[] calldata _userAddresses, uint256[] calldata _amounts) external {}
+    function batchSetAddressFrozen(address[] calldata _userAddresses, bool[] calldata _freeze) external {}
+    function batchFreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external {}
+    function batchUnfreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external {}
+    function onchainID() external view returns (address) {}
+    function version() external view returns (string memory) {}
+    function identityRegistry() external view returns (IIdentityRegistry) {}
+    function compliance() external view returns (IModularCompliance) {}
+    function paused() external view returns (bool) {}
+    function isFrozen(address _userAddress) external view returns (bool) {}
+    function getFrozenTokens(address _userAddress) external view returns (uint256) {}
 }

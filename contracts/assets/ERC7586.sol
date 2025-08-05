@@ -19,13 +19,13 @@ abstract contract ERC7586 is IERC7586, IRSToken {
     address internal receiverParty;
     address internal payerParty;
     address internal terminationReceiver;
-    address treehouseContractAddress = 0x6D8e3A744cc18E803B7a2fC95A44a3b0483703eb;
+    address treehouseContractAddress = address(0x6D8e3A744cc18E803B7a2fC95A44a3b0483703eb);
 
     constructor(
         string memory _irsTokenName,
         string memory _irsTokenSymbol,
         Types.IRS memory _irs,
-        address _participantRegistyAddress,
+        address _participantRegistryAddress,
         //address _complianceContractAddress,
         address _identityRegistryAddress
     ) IRSToken(_irsTokenName, _irsTokenSymbol) {
