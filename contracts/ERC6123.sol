@@ -40,9 +40,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         uint256 _initialMarginBuffer,
         uint256 _initialTerminationFee,
         address _participantRegistryContractAddress,
-        address _identityRegistryAddress
-        //address _complianceContractAddress
-    ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _participantRegistryContractAddress, _identityRegistryAddress) {
+        address _ratesContractAddress,
+        address _identityRegistryContractAddress
+    ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _participantRegistryContractAddress, _ratesContractAddress, _identityRegistryContractAddress) {
         IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.fixedRatePayer);
         IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.floatingRatePayer);
 
@@ -509,10 +509,6 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     function getTradeState() external view returns(TradeState) {
         return tradeState;
-    }
-
-    function getTradeID() external view returns(string memory) {
-        return tradeID;
     }
 
     function getTradeHash() external view returns(string memory) {

@@ -208,42 +208,42 @@ abstract contract IRSToken is IToken {
         address to,
         uint256 amount
     ) internal virtual {}
-    function setName(string calldata name_) external {}
-    function setSymbol(string calldata symbol_) external {}
-    function setOnchainID(address _onchainID) external {}
-    function pause() external {}
-    function unpause() external {}
-    function setAddressFrozen(address _userAddress, bool _freeze) external {}
-    function freezePartialTokens(address _userAddress, uint256 _amount) external {}
-    function unfreezePartialTokens(address _userAddress, uint256 _amount) external {}
-    function setIdentityRegistry(address _identityRegistry) external {}
-    function setCompliance(address _compliance) external {}
+    function setName(string calldata name_) external virtual {}
+    function setSymbol(string calldata symbol_) external virtual {}
+    function setOnchainID(address _onchainID) external virtual {}
+    function pause() external virtual {}
+    function unpause() external virtual {}
+    function setAddressFrozen(address _userAddress, bool _freeze) external virtual {}
+    function freezePartialTokens(address _userAddress, uint256 _amount) external virtual {}
+    function unfreezePartialTokens(address _userAddress, uint256 _amount) external virtual {}
+    function setIdentityRegistry(address _identityRegistry) external virtual {}
+    function setCompliance(address _compliance) external virtual {}
     function forcedTransfer(
         address _from,
         address _to,
         uint256 _amount
-    ) external returns (bool) {}
+    ) external virtual returns (bool) {}
     function recoveryAddress(
         address _lostWallet,
         address _newWallet,
         address _investorOnchainID
-    ) external returns (bool) {}
-    function batchTransfer(address[] calldata _toList, uint256[] calldata _amounts) external {}
+    ) external virtual returns (bool) {}
+    function batchTransfer(address[] calldata _toList, uint256[] calldata _amounts) external virtual {}
     function batchForcedTransfer(
         address[] calldata _fromList,
         address[] calldata _toList,
         uint256[] calldata _amounts
-    ) external {}
-    function batchMint(address[] calldata _toList, uint256[] calldata _amounts) external {}
-    function batchBurn(address[] calldata _userAddresses, uint256[] calldata _amounts) external {}
-    function batchSetAddressFrozen(address[] calldata _userAddresses, bool[] calldata _freeze) external {}
-    function batchFreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external {}
-    function batchUnfreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external {}
-    function onchainID() external view returns (address) {}
-    function version() external view returns (string memory) {}
-    function identityRegistry() external view returns (IIdentityRegistry) {}
-    function compliance() external view returns (IModularCompliance) {}
-    function paused() external view returns (bool) {}
-    function isFrozen(address _userAddress) external view returns (bool) {}
-    function getFrozenTokens(address _userAddress) external view returns (uint256) {}
+    ) external virtual {}
+    function batchMint(address[] calldata _toList, uint256[] calldata _amounts) external virtual {}
+    function batchBurn(address[] calldata _userAddresses, uint256[] calldata _amounts) external virtual {}
+    function batchSetAddressFrozen(address[] calldata _userAddresses, bool[] calldata _freeze) external virtual {}
+    function batchFreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external virtual {}
+    function batchUnfreezePartialTokens(address[] calldata _userAddresses, uint256[] calldata _amounts) external virtual {}
+    function onchainID() external view virtual returns (address) {}
+    function version() external view virtual returns (string memory) {}
+    function identityRegistry() external view virtual returns (IIdentityRegistry) {}
+    function compliance() external view virtual returns (IModularCompliance) {}
+    function paused() external view virtual returns (bool) {}
+    function isFrozen(address _userAddress) external view virtual  returns (bool) {}
+    function getFrozenTokens(address _userAddress) external view virtual  returns (uint256) {}
 }

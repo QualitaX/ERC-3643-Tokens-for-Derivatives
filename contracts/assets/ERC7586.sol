@@ -19,19 +19,21 @@ abstract contract ERC7586 is IERC7586, IRSToken {
     address internal receiverParty;
     address internal payerParty;
     address internal terminationReceiver;
-    address treehouseContractAddress = address(0x6D8e3A744cc18E803B7a2fC95A44a3b0483703eb);
+    //address treehouseContractAddress = address(0x6D8e3A744cc18E803B7a2fC95A44a3b0483703eb);
+    // ONLY FOR SIMULATION
+    address ratesContractAddress;
 
     constructor(
         string memory _irsTokenName,
         string memory _irsTokenSymbol,
         Types.IRS memory _irs,
         address _participantRegistryAddress,
-        //address _complianceContractAddress,
+        address _ratesContractAddress,
         address _identityRegistryAddress
     ) IRSToken(_irsTokenName, _irsTokenSymbol) {
         irs = _irs;
         participantRegistyAddress = _participantRegistryAddress;
-        //complianceContractAddress = _complianceContractAddress;
+        ratesContractAddress = _ratesContractAddress;
         identityRegistryAddress = _identityRegistryAddress;
 
         require(_irs.fixedRatePayer != address(0), "Fixed rate payer cannot be zero address");
