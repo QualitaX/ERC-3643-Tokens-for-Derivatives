@@ -8,6 +8,18 @@ import "./interfaces/IERC6123.sol";
 import "./ERC6123Storage.sol";
 import "./assets/ERC7586.sol";
 
+/**
+* _tradeID: "Trdade-001"
+* _irsTokenName: "NDF Test Token"
+* _irsTokenSymbol: "NDFT"
+* _irs: ["0x5B38Da6a701c568545dCfcB03FcB875f56beddC4", "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2", "0xd9145CCE52D386f254917e481eB44e9943F39138", 35500000, 0, 5000000, 1754911223, 1754913023]
+* ///////////////////////////////_irs: ["0x4e877414eF8f33f520bEBC32EBe581dfFBB2A457", "0x174f538120d3c074e70e89869b5ACdaF3346AD13", "0xd9145CCE52D386f254917e481eB44e9943F39138", 35500000, 0, 5000000, 1754910399, 1754910939]
+* _initial Margin: 150000
+* _Terminati fees: 100000
+* _participantRegistryContractAddress: 0x47a4ACe570473Bf0b569F7E95940a3c1522660d5
+* _ratesContractAddress: 0x7EF2e0048f5bAeDe046f6BF797943daF4ED8CB47
+* _identityRegistryContractAddress: 0x71a027b89bd4fc5245cf38faC4b02C68fD0A9018
+*/
 contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     event CollateralUpdated(string tradeID, address updater, uint256 collateralAmount);
     event LinkWithdrawn(string tradeID, address account, uint256 amount);
@@ -43,8 +55,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         address _ratesContractAddress,
         address _identityRegistryContractAddress
     ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _participantRegistryContractAddress, _ratesContractAddress, _identityRegistryContractAddress) {
-        IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.fixedRatePayer);
-        IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.floatingRatePayer);
+        //IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.fixedRatePayer);
+        //IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.floatingRatePayer);
 
         initialMarginBuffer = _initialMarginBuffer;
         initialTerminationFee = _initialTerminationFee;
@@ -130,7 +142,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     function confirmTrade(
         address _withParty,
         string memory _tradeData,
-        int _position,
+        int256 _position,
         int256 _paymentAmount,
         string memory _initialSettlementData
     ) external override onlyWhenTradeIncepted onlyWithinConfirmationTime {
@@ -162,9 +174,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         //The initial margin and the termination fee must be deposited into the contract
         uint256 marginAndFee = (initialMarginBuffer + initialTerminationFee) * 10**decimal;
-        uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
+        //uint256 upfrontPayment = uint256(_paymentAmount) * 10**decimal;
         
-        require(upfrontPayment == marginAndFee, "Invalid payment amount");
+        //require(upfrontPayment == marginAndFee, "Invalid payment amount");
         require(
             IToken(irs.settlementCurrency).transferFrom(msg.sender, address(this), marginAndFee),
             "Failed to transfer the initial margin + the termination fee"
@@ -327,9 +339,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
         uint256 notional = irs.notionalAmount;
         int256 fixedRate = irs.swapRate;
-        int256 floatingRate = ITreehouse(treehouseContractAddress).getRollingAvgEsrForNdays(7) + irs.spread;
+        int256 floatingRate = int256(IRates(ratesContractAddress).getRate()) + irs.spread;
         uint256 principalDecimal = IToken(irs.settlementCurrency).decimals();
-        uint256 rateDecimal = ITreehouse(treehouseContractAddress).decimals();
+        uint256 rateDecimal = IRates(ratesContractAddress).decimals();
 
         uint256 fixedPayment = notional * uint256(fixedRate) * 10**principalDecimal * 100 / (10**rateDecimal * 36525);
         uint256 floatingPayment = notional * uint256(floatingRate) * 10**principalDecimal * 100 / (10**rateDecimal * 36525); // spread = 0
@@ -367,8 +379,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         fixedRatePayment = marginRequirements[irs.fixedRatePayer].marginBuffer - initialMarginBuffer;
         floatingRatePayment = marginRequirements[irs.floatingRatePayer].marginBuffer - initialMarginBuffer;
 
+        uint8 decimal = decimals();
         if(fixedRatePayment == floatingRatePayment) {
-            uint256 irsTokenUnit = 10**decimals();
+            uint256 irsTokenUnit = 10**decimal;
             burn(irs.fixedRatePayer, irsTokenUnit);
             burn(irs.floatingRatePayer, irsTokenUnit);
 
@@ -393,7 +406,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             marginRequirements[payerParty].marginBuffer = marginRequirements[payerParty].marginBuffer - settlementAmount;
             marginCalls[payerParty] = 0;
 
-            uint256 irsTokenUnit = 10**decimals();
+            uint256 irsTokenUnit = 10**decimal;
             burn(irs.fixedRatePayer, irsTokenUnit);
             burn(irs.floatingRatePayer, irsTokenUnit);
             _updateIRSReceipt(settlementAmount);
@@ -408,7 +421,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             marginRequirements[payerParty].marginBuffer = marginRequirements[payerParty].marginBuffer - settlementAmount;
             marginCalls[payerParty] = 0;
 
-            uint256 irsTokenUnit = 10**decimals();
+            uint256 irsTokenUnit = 10**decimal;
             burn(irs.fixedRatePayer, irsTokenUnit);
             burn(irs.floatingRatePayer, irsTokenUnit);
             _updateIRSReceipt(settlementAmount);
@@ -511,6 +524,10 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         return tradeState;
     }
 
+    function getTradeID() external view returns(string memory) {
+        return tradeID;
+    }
+
     function getTradeHash() external view returns(string memory) {
         return tradeHash;
     }
@@ -549,5 +566,17 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     function getIRSReceipts() external view returns(Types.IRSReceipt[] memory) {
         return irsReceipts;
+    }
+
+
+    /**======== TO BE REMOVED BEFORE PRODUCTION */
+    /**
+    * @notice Withdraw all tokens stored in the contract
+    */
+    function withdrawTokens() external onlyCounterparty {
+        uint256 balance =  IToken(irs.settlementCurrency).balanceOf(address(this));
+        require(balance > 0, "Insufficient balance");
+
+        IToken(irs.settlementCurrency).transfer(msg.sender, balance);
     }
 }

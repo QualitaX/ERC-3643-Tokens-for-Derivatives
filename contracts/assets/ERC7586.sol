@@ -7,6 +7,7 @@ import "../interfaces/ICompliance.sol";
 import "../interfaces/IParticipantRegistry.sol";
 import "./IRSToken.sol";
 import "../Compliance/interfaces/IToken.sol";
+import "../Tests/IRates.sol";
 
 abstract contract ERC7586 is IERC7586, IRSToken {
     uint256 internal settlementAmount;
@@ -20,7 +21,6 @@ abstract contract ERC7586 is IERC7586, IRSToken {
     address internal payerParty;
     address internal terminationReceiver;
     //address treehouseContractAddress = address(0x6D8e3A744cc18E803B7a2fC95A44a3b0483703eb);
-    // ONLY FOR SIMULATION
     address ratesContractAddress;
 
     constructor(
@@ -82,8 +82,8 @@ abstract contract ERC7586 is IERC7586, IRSToken {
         return irs.maturityDate;
     }
 
-    function benchmark() public view returns(int256) {
-        return ITreehouse(treehouseContractAddress).getRollingAvgEsrForNdays(7);
+    function benchmark() public returns(uint256) {
+        return IRates(ratesContractAddress).getRate();
     }
 
     /**
