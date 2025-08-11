@@ -8,18 +8,6 @@ import "./interfaces/IERC6123.sol";
 import "./ERC6123Storage.sol";
 import "./assets/ERC7586.sol";
 
-/**
-* _tradeID: "Trdade-001"
-* _irsTokenName: "NDF Test Token"
-* _irsTokenSymbol: "NDFT"
-* _irs: ["0x5B38Da6a701c568545dCfcB03FcB875f56beddC4", "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2", "0xd9145CCE52D386f254917e481eB44e9943F39138", 35500000, 0, 5000000, 1754911223, 1754913023]
-* ///////////////////////////////_irs: ["0x4e877414eF8f33f520bEBC32EBe581dfFBB2A457", "0x174f538120d3c074e70e89869b5ACdaF3346AD13", "0xd9145CCE52D386f254917e481eB44e9943F39138", 35500000, 0, 5000000, 1754910399, 1754910939]
-* _initial Margin: 150000
-* _Terminati fees: 100000
-* _participantRegistryContractAddress: 0x47a4ACe570473Bf0b569F7E95940a3c1522660d5
-* _ratesContractAddress: 0x7EF2e0048f5bAeDe046f6BF797943daF4ED8CB47
-* _identityRegistryContractAddress: 0x71a027b89bd4fc5245cf38faC4b02C68fD0A9018
-*/
 contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     event CollateralUpdated(string tradeID, address updater, uint256 collateralAmount);
     event LinkWithdrawn(string tradeID, address account, uint256 amount);
@@ -55,8 +43,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         address _ratesContractAddress,
         address _identityRegistryContractAddress
     ) ERC7586(_irsTokenName, _irsTokenSymbol, _irs, _participantRegistryContractAddress, _ratesContractAddress, _identityRegistryContractAddress) {
-        //IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.fixedRatePayer);
-        //IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.floatingRatePayer);
+        IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.fixedRatePayer);
+        IParticipantRegistry(_participantRegistryContractAddress).checkUserVerification(_irs.floatingRatePayer);
 
         initialMarginBuffer = _initialMarginBuffer;
         initialTerminationFee = _initialTerminationFee;
