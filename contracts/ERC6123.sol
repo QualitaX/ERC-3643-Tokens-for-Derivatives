@@ -317,7 +317,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     /**
      * @notice Checks if collateral needs to be posted by either party. This function is called daily.
-     *         Automatically called by the Chainlink Keeper.
+     *         This function is called by the automation provider like Chainlink..
     */
     function CheckMarginCall() external onlyWhenTradeConfirmed onlyBeforeMaturity {
         require(
@@ -354,15 +354,13 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     /**
      * @notice Settles the SDC contract after it matures
-     *         This function is called by the Chainlink Keeper.
+     *         This function is called by the automation provider like Chainlink.
     */
     function settle() external onlyAfterMaturity {
         require(
             msg.sender == settlementForwarderAddress,
             "Only the settlement forwarder can call this function"
         );
-
-        //uint256 principalDecimal = IToken(irs.settlementCurrency).decimals();
 
         fixedRatePayment = marginRequirements[irs.fixedRatePayer].marginBuffer - initialMarginBuffer;
         floatingRatePayment = marginRequirements[irs.floatingRatePayer].marginBuffer - initialMarginBuffer;
@@ -443,7 +441,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         emit CollateralAdjustementForwaderSet(tradeID, msg.sender, _address);
     }
 
-    function setsettlementForwarderAddress(address _address) external onlyCounterparty {
+    function setSettlementForwarderAddress(address _address) external onlyCounterparty {
         settlementForwarderAddress = _address;
 
         emit SettlementForwderSet(tradeID, msg.sender, _address);
@@ -472,7 +470,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
      * !!!!!   SECURE THIS FUNCTION FROM BEING CALLED BY NOT ALLOWED USERS !!!!!
      * !!!!!   WITHDRAWAL SHOULD ALSO BE POSSIBLE IN CASE OF TERMINATION   !!!!!
      */
-    function withdrawLink() public onlyAfterMaturity {
+    function withdrawLink() public onlyAfterMaturity onlyCounterparty {
         LinkTokenInterface link = LinkTokenInterface(0x779877A7B0D9E8603169DdbD7836e478b4624789);
         require(
             link.transfer(msg.sender, link.balanceOf(address(this))),
