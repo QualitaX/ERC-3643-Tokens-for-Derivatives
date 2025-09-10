@@ -6,7 +6,7 @@ contract TREXSuite {
     address constant internal identityRegistryAddress = address(0x71a027b89bd4fc5245cf38faC4b02C68fD0A9018);
     address constant internal claimTopicsRegistryAddress = address(0);
     address constant internal trustedIssuersRegistryAddress = address(0);
-    address constant internal token = address(0);
+    address constant internal token = address(0x97d66cb700D69F3059F2ad482A49A5429F67b7f7);
 
     function getComplianceContractAddress() external pure returns (address) {
         return complianceContractAddress;
