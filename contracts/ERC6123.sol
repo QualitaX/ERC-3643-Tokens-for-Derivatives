@@ -8,6 +8,17 @@ import "./interfaces/IERC6123.sol";
 import "./ERC6123Storage.sol";
 import "./assets/ERC7586.sol";
 
+/**
+* _tradeID: "Trdade-001"
+* _irsTokenName: "NDF Test Token"
+* _irsTokenSymbol: "NDFT"
+* _irs: ["0x4e877414eF8f33f520bEBC32EBe581dfFBB2A457", "0x174f538120d3c074e70e89869b5ACdaF3346AD13", "0x97d66cb700D69F3059F2ad482A49A5429F67b7f7", 11650, 0, 5000000, 1756415700, 1756418400]
+* _initial Margin: 150000
+* _Terminati fees: 100000
+* _participantRegistryContractAddress: 0x47a4ACe570473Bf0b569F7E95940a3c1522660d5
+* _ratesContractAddress: 0xE4919be53Bc467676E648eFEf0965d084dC47a28
+* _identityRegistryContractAddress: 0x71a027b89bd4fc5245cf38faC4b02C68fD0A9018
+*/
 contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     event CollateralUpdated(string tradeID, address updater, uint256 collateralAmount);
     event LinkWithdrawn(string tradeID, address account, uint256 amount);
@@ -217,7 +228,9 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         int256 _settlementAmount,
         string memory _settlementData
     ) public override {
-        swap();
+        //swap();
+        //IToken(irs.settlementCurrency).transfer(receiverParty, settlementAmount);
+        emit Swap(receiverParty, settlementAmount);
 
         tradeState = TradeState.Matured;
         emit SettlementEvaluated(msg.sender, _settlementAmount, _settlementData);
@@ -317,7 +330,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     /**
      * @notice Checks if collateral needs to be posted by either party. This function is called daily.
-     *         This function is called by the automation provider like Chainlink..
+     *         Automatically called by the Chainlink Keeper.
     */
     function CheckMarginCall() external onlyWhenTradeConfirmed onlyBeforeMaturity {
         require(
@@ -354,7 +367,7 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     /**
      * @notice Settles the SDC contract after it matures
-     *         This function is called by the automation provider like Chainlink.
+     *         This function is called by the Chainlink Keeper.
     */
     function settle() external onlyAfterMaturity {
         require(
@@ -371,6 +384,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
             burn(irs.fixedRatePayer, irsTokenUnit);
             burn(irs.floatingRatePayer, irsTokenUnit);
 
+            tradeState = TradeState.Matured;
+
             marginCalls[irs.fixedRatePayer] = 0;
             marginCalls[irs.floatingRatePayer] = 0;
 
@@ -384,6 +399,8 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
                     floatingRatePayment: floatingRatePayment
                 })
             );
+
+            emit ContractSettled(tradeID, address(0), address(0), 0, fixedRatePayment, floatingRatePayment);
         } else if(fixedRatePayment > floatingRatePayment) {
             settlementAmount = fixedRatePayment - floatingRatePayment;
             payerParty = irs.fixedRatePayer;
@@ -435,6 +452,11 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
         emit CollateralUpdated(tradeID, msg.sender, marginRequirements[msg.sender].marginBuffer);
     }
 
+    function withdraw() external onlyCounterparty onlyAfterMaturity {
+        IToken(irs.settlementCurrency).transfer(receiverParty, settlementAmount);
+        receiverParty = address(0);
+    }
+
     function setCollateralAdjustementForwarderAddress(address _address) external onlyCounterparty {
         collateralAdjustementForwarderAddress = _address;
 
@@ -453,16 +475,16 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     */
     function withdrawInitialMarginAndTerminationFees() external onlyCounterparty onlyAfterMaturity {
         uint256 amount = marginRequirements[msg.sender].marginBuffer + marginRequirements[msg.sender].terminationFee;
-        
-        require(
-            IToken(irs.settlementCurrency).transfer(msg.sender, amount),
-            "Failed to transfer the initial margin and the termination fee"
-        );
 
         emit MarginAndFeesWithdrawn(tradeID, msg.sender, marginRequirements[msg.sender].marginBuffer, marginRequirements[msg.sender].terminationFee);
 
         marginRequirements[msg.sender].marginBuffer = 0;
         marginRequirements[msg.sender].terminationFee = 0;
+        
+        require(
+            IToken(irs.settlementCurrency).transfer(msg.sender, amount),
+            "Failed to transfer the initial margin and the termination fee"
+        );
     }
 
     /**
@@ -540,6 +562,13 @@ contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
 
     function getMarginRequirement(address _account) external view returns(Types.MarginRequirement memory) {
         return marginRequirements[_account];
+    }
+
+    function getSettlementInfo() external view returns(address receiver, uint256 amount) {
+        receiver = receiverParty;
+        amount = settlementAmount;
+
+        return (receiver, amount);
     }
 
     function otherParty() internal view returns(address) {

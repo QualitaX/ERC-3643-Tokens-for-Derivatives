@@ -10,14 +10,12 @@ import "../Compliance/interfaces/IToken.sol";
 import "../Tests/IRates.sol";
 
 abstract contract ERC7586 is IERC7586, IRSToken {
-    uint256 internal settlementAmount;
     uint256 internal terminationAmount;
 
     address participantRegistyAddress;
     //address complianceContractAddress;
     address identityRegistryAddress;
     
-    address internal receiverParty;
     address internal payerParty;
     address internal terminationReceiver;
     //address treehouseContractAddress = address(0x6D8e3A744cc18E803B7a2fC95A44a3b0483703eb);
@@ -90,14 +88,14 @@ abstract contract ERC7586 is IERC7586, IRSToken {
     * @notice Transfer the net settlement amount to the receiver account.
     * @notice All compliance checks are performed by the token contract.
     */
-    function swap() public returns(bool) {
-        IToken(irs.settlementCurrency).transfer(receiverParty, settlementAmount);
+    function swap() public pure returns(bool) {
+        //IToken(irs.settlementCurrency).transfer(receiverParty, settlementAmount);
 
-        emit Swap(receiverParty, settlementAmount);
+        //emit Swap(_receiverParty, _settlementAmount);
 
         // Prevents the transfer of funds from the outside of ERC6123 contrat
         // This is possible because the receipient of the transferFrom function in ERC20 must not be the zero address
-        receiverParty = address(0);
+        //receiverParty = address(0);
 
         return true;
     }
