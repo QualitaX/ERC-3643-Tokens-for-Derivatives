@@ -161,7 +161,9 @@ abstract contract ERC6123Storage {
     uint256 internal confirmationTime;
     uint256 internal fixedRatePayment;
     uint256 internal floatingRatePayment;
-
+    uint256 internal settlementAmount;
+    
+    address internal receiverParty;
     address public collateralAdjustementForwarderAddress;
     address public settlementForwarderAddress;
 

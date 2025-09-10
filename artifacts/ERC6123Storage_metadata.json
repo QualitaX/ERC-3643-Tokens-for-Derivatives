@@ -1,0 +1,242 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "allSettlementsDone",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_caller",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_withParty",
+						"type": "address"
+					}
+				],
+				"name": "cannotInceptWithYourself",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_inceptor",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_dataHash",
+						"type": "uint256"
+					}
+				],
+				"name": "inconsistentTradeDataOrWrongAddress",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "int256",
+						"name": "_amount",
+						"type": "int256"
+					}
+				],
+				"name": "invalidPaymentAmount",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "int256",
+						"name": "_position",
+						"type": "int256"
+					}
+				],
+				"name": "invalidPositionValue",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "string",
+						"name": "_tradeID",
+						"type": "string"
+					}
+				],
+				"name": "invalidTrade",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_withParty",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_otherParty",
+						"type": "address"
+					}
+				],
+				"name": "mustBeOtherParty",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_withParty",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_payer",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_receiver",
+						"type": "address"
+					}
+				],
+				"name": "mustBePayerOrReceiver",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_settlementAmount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_availableMarginBuffer",
+						"type": "uint256"
+					}
+				],
+				"name": "notEnoughMarginBuffer",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "int256",
+						"name": "_fixedRate",
+						"type": "int256"
+					},
+					{
+						"internalType": "int256",
+						"name": "_floatingRate",
+						"type": "int256"
+					}
+				],
+				"name": "nothingToSwap",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "obseleteFunction",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "stateMustBeConfirmedOrSettled",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "collateralAdjustementForwarderAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "settlementForwarderAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "tradeID",
+				"outputs": [
+					{
+						"internalType": "string",
+						"name": "",
+						"type": "string"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/ERC6123Storage.sol": "ERC6123Storage"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/ERC6123Storage.sol": {
+			"keccak256": "0x49a51411c33503b080807991a19baa4777bf5738f1c47dc502bc3a6ad8a03e48",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://2982606ebe0da19dccfccdf2fed446ac474736ac46505b5b6d0c3af035827bf3",
+				"dweb:/ipfs/QmVbvwYBnw6B9s2hrUgtPmZKbGPHX5JM6Kn4pbZigigXyS"
+			]
+		},
+		"contracts/Types.sol": {
+			"keccak256": "0x44697308bee00c38de7f728910a65debd32fa6b6248650e29cc27a746e7c48b2",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://ae00da2188abfd594de0497475a8b1cb63be3d878bb1a028767d64996a365a1e",
+				"dweb:/ipfs/QmXTtu94arTjKKGeVGXYwey5DJVEGFDQ4GTBYtZNbm31bM"
+			]
+		}
+	},
+	"version": 1
+}

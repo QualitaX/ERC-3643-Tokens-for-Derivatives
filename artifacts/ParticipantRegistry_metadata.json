@@ -1,0 +1,154 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_trexSuiteAddress",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "constructor"
+			},
+			{
+				"inputs": [],
+				"name": "tokenPaused",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "from",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					}
+				],
+				"name": "transferNotAllowed",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					}
+				],
+				"name": "userNotVerified",
+				"type": "error"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "user",
+						"type": "address"
+					}
+				],
+				"name": "walletFrozen",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "checkTokenPaused",
+				"outputs": [],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_user",
+						"type": "address"
+					}
+				],
+				"name": "checkUserVerification",
+				"outputs": [],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_user",
+						"type": "address"
+					}
+				],
+				"name": "checkWalletFrozen",
+				"outputs": [],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Compliance/ParticipantRegistry.sol": "ParticipantRegistry"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Compliance/ParticipantRegistry.sol": {
+			"keccak256": "0xd673040913f0c423b5a8365ecdbc6e3c6bf6275dfc4a06ef5329e418436f9eb5",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://8fdb54e6579355d033c8d9cce9ba9b027eac36e03090b82821dfcca1ae0ff94a",
+				"dweb:/ipfs/QmTnqEgA476yuGCZVFe9CKEFFTNh14nFpBmKFaMfbT8cJd"
+			]
+		},
+		"contracts/Compliance/interfaces/ITREXSuite.sol": {
+			"keccak256": "0x0f8d32c47b93f20cbf6a7ebf31a70b1a273d2dfab452d24d98a1fb1e8eed0b5c",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://409b5ec7857b3451ba1eb7abcb323d2d91457f5a798c433dc2e4b9bb3bf62c25",
+				"dweb:/ipfs/QmX754ghK8ALvgguj3nybGLHdpDZ4ULK9fhtgU1eY3Z3sv"
+			]
+		},
+		"contracts/interfaces/ICompliance.sol": {
+			"keccak256": "0x244630db5a0dc04c970589d1078012b51a3c884ed6889990c5f08ed8ba715deb",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://e4ab76af9d22cd6ce1a36ec84459d8ab38273236bf83e9b687f3d53bebe9f3f4",
+				"dweb:/ipfs/QmfMEoZYRx9UA3xmp3pvwBnBUVWxdFDphaBJBf16QFHEAU"
+			]
+		}
+	},
+	"version": 1
+}

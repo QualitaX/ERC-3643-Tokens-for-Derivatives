@@ -15,7 +15,7 @@ contract Factory {
     mapping(string => bool) public isDeployed;
     Deployed[] internal deployedContracts;
 
-    event ContractDeployed(string tradeID,  address deployer, address contractAddress);
+    event ContractDeployed(string tradeID, address deployer, address contractAddress);
 
     function deployForwardContract(
         string memory _tradeID,
@@ -23,7 +23,10 @@ contract Factory {
         string memory _irsTokenSymbol,
         Types.IRS memory _irs,
         uint256 _initialMarginBuffer,
-        uint256 _initialTerminationFee
+        uint256 _initialTerminationFee,
+        address _participantRegistryContractAddress,
+        address _ratesContractAddress,
+        address _identityRegistryContractAddress
     ) external {
         if (isDeployed[_tradeID]) revert alreadyDeployed(_tradeID);
 
@@ -33,7 +36,10 @@ contract Factory {
             _irsTokenSymbol,
             _irs,
             _initialMarginBuffer,
-            _initialTerminationFee
+            _initialTerminationFee,
+            _participantRegistryContractAddress,
+            _ratesContractAddress,
+            _identityRegistryContractAddress
         );
 
         deployedContracts.push(Deployed({

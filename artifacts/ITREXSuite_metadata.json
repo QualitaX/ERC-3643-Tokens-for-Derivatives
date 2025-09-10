@@ -1,0 +1,142 @@
+{
+	"compiler": {
+		"version": "0.8.24+commit.e11b9ed9"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "getClaimTopicsRegistryAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getComplianceContractAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getIdentityRegistryAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getTokenAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getTrustedIssuersRegistryAddress",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"getClaimTopicsRegistryAddress()": {
+					"details": "Get the address of the claim topics registry contract.",
+					"returns": {
+						"_0": "Address of the claim topics registry contract."
+					}
+				},
+				"getComplianceContractAddress()": {
+					"details": "Get the address of the compliance contract.",
+					"returns": {
+						"_0": "Address of the compliance contract."
+					}
+				},
+				"getIdentityRegistryAddress()": {
+					"details": "Get the address of the identity registry contract.",
+					"returns": {
+						"_0": "Address of the identity registry contract."
+					}
+				},
+				"getTokenAddress()": {
+					"details": "Get the address of the token contract.",
+					"returns": {
+						"_0": "Address of the token contract."
+					}
+				},
+				"getTrustedIssuersRegistryAddress()": {
+					"details": "Get the address of the trusted issuers registry contract.",
+					"returns": {
+						"_0": "Address of the trusted issuers registry contract."
+					}
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Compliance/interfaces/ITREXSuite.sol": "ITREXSuite"
+		},
+		"evmVersion": "shanghai",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Compliance/interfaces/ITREXSuite.sol": {
+			"keccak256": "0x0f8d32c47b93f20cbf6a7ebf31a70b1a273d2dfab452d24d98a1fb1e8eed0b5c",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://409b5ec7857b3451ba1eb7abcb323d2d91457f5a798c433dc2e4b9bb3bf62c25",
+				"dweb:/ipfs/QmX754ghK8ALvgguj3nybGLHdpDZ4ULK9fhtgU1eY3Z3sv"
+			]
+		}
+	},
+	"version": 1
+}

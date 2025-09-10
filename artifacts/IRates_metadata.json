@@ -1,0 +1,72 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "decimals",
+				"outputs": [
+					{
+						"internalType": "uint8",
+						"name": "",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getRate",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Tests/IRates.sol": "IRates"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Tests/IRates.sol": {
+			"keccak256": "0x5081a39bff7975cc3f87f94900f33c51f149420d639e7db1877f98c0169da826",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://43942992d45ee2e3c1b6dd9452352e2fc81f5a8aa7b963a0f16de113b1ab5f8e",
+				"dweb:/ipfs/QmWmq18kwSqyJsSiNtz86ozr43P2HDykf9bDoASrxERfXW"
+			]
+		}
+	},
+	"version": 1
+}

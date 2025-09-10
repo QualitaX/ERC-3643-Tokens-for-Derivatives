@@ -1,0 +1,247 @@
+{
+	"deploy": {
+		"VM:-": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"main:1": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"ropsten:3": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"rinkeby:4": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"kovan:42": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"goerli:5": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"Custom": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		}
+	},
+	"data": {
+		"bytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"deployedBytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"immutableReferences": {},
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"gasEstimates": null,
+		"methodIdentifiers": {
+			"collateralAdjustementForwarderAddress()": "a2552571",
+			"settlementForwarderAddress()": "0d084eb8",
+			"tradeID()": "dca0baad"
+		}
+	},
+	"abi": [
+		{
+			"inputs": [],
+			"name": "allSettlementsDone",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_caller",
+					"type": "address"
+				},
+				{
+					"internalType": "address",
+					"name": "_withParty",
+					"type": "address"
+				}
+			],
+			"name": "cannotInceptWithYourself",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_inceptor",
+					"type": "address"
+				},
+				{
+					"internalType": "uint256",
+					"name": "_dataHash",
+					"type": "uint256"
+				}
+			],
+			"name": "inconsistentTradeDataOrWrongAddress",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "int256",
+					"name": "_amount",
+					"type": "int256"
+				}
+			],
+			"name": "invalidPaymentAmount",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "int256",
+					"name": "_position",
+					"type": "int256"
+				}
+			],
+			"name": "invalidPositionValue",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "string",
+					"name": "_tradeID",
+					"type": "string"
+				}
+			],
+			"name": "invalidTrade",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_withParty",
+					"type": "address"
+				},
+				{
+					"internalType": "address",
+					"name": "_otherParty",
+					"type": "address"
+				}
+			],
+			"name": "mustBeOtherParty",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "_withParty",
+					"type": "address"
+				},
+				{
+					"internalType": "address",
+					"name": "_payer",
+					"type": "address"
+				},
+				{
+					"internalType": "address",
+					"name": "_receiver",
+					"type": "address"
+				}
+			],
+			"name": "mustBePayerOrReceiver",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "uint256",
+					"name": "_settlementAmount",
+					"type": "uint256"
+				},
+				{
+					"internalType": "uint256",
+					"name": "_availableMarginBuffer",
+					"type": "uint256"
+				}
+			],
+			"name": "notEnoughMarginBuffer",
+			"type": "error"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "int256",
+					"name": "_fixedRate",
+					"type": "int256"
+				},
+				{
+					"internalType": "int256",
+					"name": "_floatingRate",
+					"type": "int256"
+				}
+			],
+			"name": "nothingToSwap",
+			"type": "error"
+		},
+		{
+			"inputs": [],
+			"name": "obseleteFunction",
+			"type": "error"
+		},
+		{
+			"inputs": [],
+			"name": "stateMustBeConfirmedOrSettled",
+			"type": "error"
+		},
+		{
+			"inputs": [],
+			"name": "collateralAdjustementForwarderAddress",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [],
+			"name": "settlementForwarderAddress",
+			"outputs": [
+				{
+					"internalType": "address",
+					"name": "",
+					"type": "address"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		},
+		{
+			"inputs": [],
+			"name": "tradeID",
+			"outputs": [
+				{
+					"internalType": "string",
+					"name": "",
+					"type": "string"
+				}
+			],
+			"stateMutability": "view",
+			"type": "function"
+		}
+	]
+}

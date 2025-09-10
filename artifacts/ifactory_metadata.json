@@ -1,0 +1,59 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "deployForwardContract",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IFactory.sol": "ifactory"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IFactory.sol": {
+			"keccak256": "0xc62d2b165120633cd220902c26dfd73a4e09516056d6b73829e9eae53a64684f",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://f7d209a888e2d6b0beb33c77a063636a8bdfb5ff359fa05b64c594eef253744c",
+				"dweb:/ipfs/QmRsd45UfoLL6So1Uo1cvz1x4GAzXm9XS3kWj7wZaCbBxL"
+			]
+		}
+	},
+	"version": 1
+}

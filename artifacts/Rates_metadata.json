@@ -1,0 +1,98 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "invalidRateIndex",
+				"type": "error"
+			},
+			{
+				"inputs": [],
+				"name": "decimals",
+				"outputs": [
+					{
+						"internalType": "uint8",
+						"name": "",
+						"type": "uint8"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getRate",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "rateCount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"author": "Samuel Edoumou",
+			"details": "This contrat hosts a list of EUR/USD rates (Close) for 5 days (from 2025-08-11 to 2025-08-15). The rates are expressed in 6 decimals (e.g., 1.1648 is represented as 1164800) The rates are sourced from `finance.yahoo.com`",
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Tests/Rates.sol": "Rates"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Tests/Rates.sol": {
+			"keccak256": "0x7cfa04d561e9341f711c61d3e9de2e36018d88d73c932a68eb1d269e20072d9d",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://17759c52c7b66848a236316d25a92c1f87a239d6722f8ffb9c89ad6607c24bf5",
+				"dweb:/ipfs/QmPLeP4AfBwfff1ZVDvEHm4hG7HwGzPMfAz8R1wkTfA1Yp"
+			]
+		}
+	},
+	"version": 1
+}

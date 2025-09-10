@@ -1,0 +1,138 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "claimTopic",
+						"type": "uint256"
+					}
+				],
+				"name": "ClaimTopicAdded",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "uint256",
+						"name": "claimTopic",
+						"type": "uint256"
+					}
+				],
+				"name": "ClaimTopicRemoved",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_claimTopic",
+						"type": "uint256"
+					}
+				],
+				"name": "addClaimTopic",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getClaimTopics",
+				"outputs": [
+					{
+						"internalType": "uint256[]",
+						"name": "",
+						"type": "uint256[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_claimTopic",
+						"type": "uint256"
+					}
+				],
+				"name": "removeClaimTopic",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"addClaimTopic(uint256)": {
+					"details": "Add a trusted claim topic (For example: KYC=1, AML=2). Only owner can call. emits `ClaimTopicAdded` event cannot add more than 15 topics for 1 token as adding more could create gas issues",
+					"params": {
+						"_claimTopic": "The claim topic index"
+					}
+				},
+				"getClaimTopics()": {
+					"details": "Get the trusted claim topics for the security token",
+					"returns": {
+						"_0": "Array of trusted claim topics"
+					}
+				},
+				"removeClaimTopic(uint256)": {
+					"details": "Remove a trusted claim topic (For example: KYC=1, AML=2).  Only owner can call.  emits `ClaimTopicRemoved` event",
+					"params": {
+						"_claimTopic": "The claim topic index"
+					}
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"events": {
+				"ClaimTopicAdded(uint256)": {
+					"notice": "this event is emitted when a claim topic has been added to the ClaimTopicsRegistry  the event is emitted by the 'addClaimTopic' function  `claimTopic` is the required claim added to the Claim Topics Registry"
+				},
+				"ClaimTopicRemoved(uint256)": {
+					"notice": "this event is emitted when a claim topic has been removed from the ClaimTopicsRegistry  the event is emitted by the 'removeClaimTopic' function  `claimTopic` is the required claim removed from the Claim Topics Registry"
+				}
+			},
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Compliance/interfaces/IClaimTopicsRegistry.sol": "IClaimTopicsRegistry"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/Compliance/interfaces/IClaimTopicsRegistry.sol": {
+			"keccak256": "0x00cac67f71ff3da54d5e32b65e3c7efc80e810f747f3462139ae1494557a6189",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://f8f2b425038a0cf58238c1122b557e602fd4fbb4ac7611f9b16def2f4cff8e6d",
+				"dweb:/ipfs/QmcCMUvAcZhFo3rkQ9vBVNiNHGmwi8fRSiQNruB1fH8WH3"
+			]
+		}
+	},
+	"version": 1
+}

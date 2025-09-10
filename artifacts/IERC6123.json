@@ -1,0 +1,564 @@
+{
+	"deploy": {
+		"VM:-": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"main:1": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"ropsten:3": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"rinkeby:4": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"kovan:42": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"goerli:5": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		},
+		"Custom": {
+			"linkReferences": {},
+			"autoDeployLib": true
+		}
+	},
+	"data": {
+		"bytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"deployedBytecode": {
+			"functionDebugData": {},
+			"generatedSources": [],
+			"immutableReferences": {},
+			"linkReferences": {},
+			"object": "",
+			"opcodes": "",
+			"sourceMap": ""
+		},
+		"gasEstimates": null,
+		"methodIdentifiers": {
+			"afterTransfer(bool,string)": "6b7e8648",
+			"cancelTrade(address,string,int256,int256,string)": "5ccc3114",
+			"cancelTradeTermination(string,int256,string)": "838a3b92",
+			"confirmTrade(address,string,int256,int256,string)": "858f0e93",
+			"confirmTradeTermination(string,int256,string)": "08f7490c",
+			"inceptTrade(address,string,int256,int256,string)": "ec11c4e9",
+			"initiateSettlement()": "c78b432e",
+			"performSettlement(int256,string)": "6ba63956",
+			"requestTradeTermination(string,int256,string)": "d19e5133"
+		}
+	},
+	"abi": [
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "initiator",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "int256",
+					"name": "settlementAmount",
+					"type": "int256"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "settlementData",
+					"type": "string"
+				}
+			],
+			"name": "SettlementEvaluated",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "transactionData",
+					"type": "string"
+				}
+			],
+			"name": "SettlementFailed",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "initiator",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeData",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "lastSettlementData",
+					"type": "string"
+				}
+			],
+			"name": "SettlementRequested",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "transactionData",
+					"type": "string"
+				}
+			],
+			"name": "SettlementTransferred",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				}
+			],
+			"name": "TradeActivated",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "initiator",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				}
+			],
+			"name": "TradeCanceled",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "confirmer",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				}
+			],
+			"name": "TradeConfirmed",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "initiator",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "withParty",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeData",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "int256",
+					"name": "position",
+					"type": "int256"
+				},
+				{
+					"indexed": false,
+					"internalType": "int256",
+					"name": "paymentAmount",
+					"type": "int256"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "initialSettlementData",
+					"type": "string"
+				}
+			],
+			"name": "TradeIncepted",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "cause",
+					"type": "string"
+				}
+			],
+			"name": "TradeTerminated",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "initiator",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "terminationTerms",
+					"type": "string"
+				}
+			],
+			"name": "TradeTerminationCanceled",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "confirmer",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "int256",
+					"name": "terminationPayment",
+					"type": "int256"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "terminationTerms",
+					"type": "string"
+				}
+			],
+			"name": "TradeTerminationConfirmed",
+			"type": "event"
+		},
+		{
+			"anonymous": false,
+			"inputs": [
+				{
+					"indexed": false,
+					"internalType": "address",
+					"name": "initiator",
+					"type": "address"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"indexed": false,
+					"internalType": "int256",
+					"name": "terminationPayment",
+					"type": "int256"
+				},
+				{
+					"indexed": false,
+					"internalType": "string",
+					"name": "terminationTerms",
+					"type": "string"
+				}
+			],
+			"name": "TradeTerminationRequest",
+			"type": "event"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "bool",
+					"name": "success",
+					"type": "bool"
+				},
+				{
+					"internalType": "string",
+					"name": "transactionData",
+					"type": "string"
+				}
+			],
+			"name": "afterTransfer",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "withParty",
+					"type": "address"
+				},
+				{
+					"internalType": "string",
+					"name": "tradeData",
+					"type": "string"
+				},
+				{
+					"internalType": "int256",
+					"name": "position",
+					"type": "int256"
+				},
+				{
+					"internalType": "int256",
+					"name": "paymentAmount",
+					"type": "int256"
+				},
+				{
+					"internalType": "string",
+					"name": "initialSettlementData",
+					"type": "string"
+				}
+			],
+			"name": "cancelTrade",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"internalType": "int256",
+					"name": "terminationPayment",
+					"type": "int256"
+				},
+				{
+					"internalType": "string",
+					"name": "terminationTerms",
+					"type": "string"
+				}
+			],
+			"name": "cancelTradeTermination",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "withParty",
+					"type": "address"
+				},
+				{
+					"internalType": "string",
+					"name": "tradeData",
+					"type": "string"
+				},
+				{
+					"internalType": "int256",
+					"name": "position",
+					"type": "int256"
+				},
+				{
+					"internalType": "int256",
+					"name": "paymentAmount",
+					"type": "int256"
+				},
+				{
+					"internalType": "string",
+					"name": "initialSettlementData",
+					"type": "string"
+				}
+			],
+			"name": "confirmTrade",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"internalType": "int256",
+					"name": "terminationPayment",
+					"type": "int256"
+				},
+				{
+					"internalType": "string",
+					"name": "terminationTerms",
+					"type": "string"
+				}
+			],
+			"name": "confirmTradeTermination",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "address",
+					"name": "withParty",
+					"type": "address"
+				},
+				{
+					"internalType": "string",
+					"name": "tradeData",
+					"type": "string"
+				},
+				{
+					"internalType": "int256",
+					"name": "position",
+					"type": "int256"
+				},
+				{
+					"internalType": "int256",
+					"name": "paymentAmount",
+					"type": "int256"
+				},
+				{
+					"internalType": "string",
+					"name": "initialSettlementData",
+					"type": "string"
+				}
+			],
+			"name": "inceptTrade",
+			"outputs": [
+				{
+					"internalType": "string",
+					"name": "",
+					"type": "string"
+				}
+			],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [],
+			"name": "initiateSettlement",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "int256",
+					"name": "settlementAmount",
+					"type": "int256"
+				},
+				{
+					"internalType": "string",
+					"name": "settlementData",
+					"type": "string"
+				}
+			],
+			"name": "performSettlement",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		},
+		{
+			"inputs": [
+				{
+					"internalType": "string",
+					"name": "tradeId",
+					"type": "string"
+				},
+				{
+					"internalType": "int256",
+					"name": "terminationPayment",
+					"type": "int256"
+				},
+				{
+					"internalType": "string",
+					"name": "terminationTerms",
+					"type": "string"
+				}
+			],
+			"name": "requestTradeTermination",
+			"outputs": [],
+			"stateMutability": "nonpayable",
+			"type": "function"
+		}
+	]
+}
