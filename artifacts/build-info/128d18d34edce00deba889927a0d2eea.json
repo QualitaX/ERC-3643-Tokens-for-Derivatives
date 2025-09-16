@@ -1,0 +1,499 @@
+{
+	"id": "128d18d34edce00deba889927a0d2eea",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.30",
+	"solcLongVersion": "0.8.30+commit.73712a01",
+	"input": {
+		"language": "Solidity",
+		"sources": {
+			"contracts/interfaces/IParticipantRegistry.sol": {
+				"content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.19;\n\ninterface IParticipantRegistry {\n    /**\n     * @dev Check if the user is verified in the Identity Registry.\n     * @param _user The address of the user to check.\n     */\n    function checkUserVerification(address _user) external view;\n\n    /**\n     * @dev Check if the transfer is allowed by compliance rules.\n     * @param _from The address of the sender.\n     * @param _to The address of the recipient.\n     * @param _amount The amount to transfer.\n     */\n    function checkTransferCompliance(address _from, address _to, uint256 _amount) external view;\n\n    /**\n     * @dev Check if the token is paused.\n     */\n    function checkTokenPaused() external view;\n\n    /**\n     * @dev Check if the user's wallet is frozen.\n     * @param _user The address of the user to check.\n     */\n    function checkWalletFrozen(address _user) external view;\n}"
+			}
+		},
+		"settings": {
+			"optimizer": {
+				"enabled": true,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			},
+			"remappings": []
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/interfaces/IParticipantRegistry.sol": {
+				"IParticipantRegistry": {
+					"abi": [
+						{
+							"inputs": [],
+							"name": "checkTokenPaused",
+							"outputs": [],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "address",
+									"name": "_from",
+									"type": "address"
+								},
+								{
+									"internalType": "address",
+									"name": "_to",
+									"type": "address"
+								},
+								{
+									"internalType": "uint256",
+									"name": "_amount",
+									"type": "uint256"
+								}
+							],
+							"name": "checkTransferCompliance",
+							"outputs": [],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "address",
+									"name": "_user",
+									"type": "address"
+								}
+							],
+							"name": "checkUserVerification",
+							"outputs": [],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "address",
+									"name": "_user",
+									"type": "address"
+								}
+							],
+							"name": "checkWalletFrozen",
+							"outputs": [],
+							"stateMutability": "view",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"kind": "dev",
+						"methods": {
+							"checkTokenPaused()": {
+								"details": "Check if the token is paused."
+							},
+							"checkTransferCompliance(address,address,uint256)": {
+								"details": "Check if the transfer is allowed by compliance rules.",
+								"params": {
+									"_amount": "The amount to transfer.",
+									"_from": "The address of the sender.",
+									"_to": "The address of the recipient."
+								}
+							},
+							"checkUserVerification(address)": {
+								"details": "Check if the user is verified in the Identity Registry.",
+								"params": {
+									"_user": "The address of the user to check."
+								}
+							},
+							"checkWalletFrozen(address)": {
+								"details": "Check if the user's wallet is frozen.",
+								"params": {
+									"_user": "The address of the user to check."
+								}
+							}
+						},
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"checkTokenPaused()": "4bd49a8f",
+							"checkTransferCompliance(address,address,uint256)": "55252389",
+							"checkUserVerification(address)": "e6a9f2af",
+							"checkWalletFrozen(address)": "10d74732"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[],\"name\":\"checkTokenPaused\",\"outputs\":[],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"checkTransferCompliance\",\"outputs\":[],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"}],\"name\":\"checkUserVerification\",\"outputs\":[],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_user\",\"type\":\"address\"}],\"name\":\"checkWalletFrozen\",\"outputs\":[],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{\"checkTokenPaused()\":{\"details\":\"Check if the token is paused.\"},\"checkTransferCompliance(address,address,uint256)\":{\"details\":\"Check if the transfer is allowed by compliance rules.\",\"params\":{\"_amount\":\"The amount to transfer.\",\"_from\":\"The address of the sender.\",\"_to\":\"The address of the recipient.\"}},\"checkUserVerification(address)\":{\"details\":\"Check if the user is verified in the Identity Registry.\",\"params\":{\"_user\":\"The address of the user to check.\"}},\"checkWalletFrozen(address)\":{\"details\":\"Check if the user's wallet is frozen.\",\"params\":{\"_user\":\"The address of the user to check.\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IParticipantRegistry.sol\":\"IParticipantRegistry\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IParticipantRegistry.sol\":{\"keccak256\":\"0x9c507432a297181df46c3567f7af6fa92de4e04c0acfa5c34e2d85c82f37dc40\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://6bf78894fb083d13eb64c095a1deea0789393b4acfcdf3547e2745fc2a890372\",\"dweb:/ipfs/QmbrD97iJ6tmP8UWvxoYb68GUrGVJKjaMoRui2qT2gjCho\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"kind": "user",
+						"methods": {},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/interfaces/IParticipantRegistry.sol": {
+				"ast": {
+					"absolutePath": "contracts/interfaces/IParticipantRegistry.sol",
+					"exportedSymbols": {
+						"IParticipantRegistry": [
+							28
+						]
+					},
+					"id": 29,
+					"license": "UNLICENSED",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"^",
+								"0.8",
+								".19"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "39:24:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IParticipantRegistry",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"fullyImplemented": false,
+							"id": 28,
+							"linearizedBaseContracts": [
+								28
+							],
+							"name": "IParticipantRegistry",
+							"nameLocation": "75:20:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"documentation": {
+										"id": 2,
+										"nodeType": "StructuredDocumentation",
+										"src": "102:133:0",
+										"text": " @dev Check if the user is verified in the Identity Registry.\n @param _user The address of the user to check."
+									},
+									"functionSelector": "e6a9f2af",
+									"id": 7,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "checkUserVerification",
+									"nameLocation": "249:21:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 5,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 4,
+												"mutability": "mutable",
+												"name": "_user",
+												"nameLocation": "279:5:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 7,
+												"src": "271:13:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 3,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "271:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "270:15:0"
+									},
+									"returnParameters": {
+										"id": 6,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "299:0:0"
+									},
+									"scope": 28,
+									"src": "240:60:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 8,
+										"nodeType": "StructuredDocumentation",
+										"src": "306:218:0",
+										"text": " @dev Check if the transfer is allowed by compliance rules.\n @param _from The address of the sender.\n @param _to The address of the recipient.\n @param _amount The amount to transfer."
+									},
+									"functionSelector": "55252389",
+									"id": 17,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "checkTransferCompliance",
+									"nameLocation": "538:23:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 15,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 10,
+												"mutability": "mutable",
+												"name": "_from",
+												"nameLocation": "570:5:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 17,
+												"src": "562:13:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 9,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "562:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 12,
+												"mutability": "mutable",
+												"name": "_to",
+												"nameLocation": "585:3:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 17,
+												"src": "577:11:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 11,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "577:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 14,
+												"mutability": "mutable",
+												"name": "_amount",
+												"nameLocation": "598:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 17,
+												"src": "590:15:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												},
+												"typeName": {
+													"id": 13,
+													"name": "uint256",
+													"nodeType": "ElementaryTypeName",
+													"src": "590:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint256",
+														"typeString": "uint256"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "561:45:0"
+									},
+									"returnParameters": {
+										"id": 16,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "620:0:0"
+									},
+									"scope": 28,
+									"src": "529:92:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 18,
+										"nodeType": "StructuredDocumentation",
+										"src": "627:53:0",
+										"text": " @dev Check if the token is paused."
+									},
+									"functionSelector": "4bd49a8f",
+									"id": 21,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "checkTokenPaused",
+									"nameLocation": "694:16:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 19,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "710:2:0"
+									},
+									"returnParameters": {
+										"id": 20,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "726:0:0"
+									},
+									"scope": 28,
+									"src": "685:42:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 22,
+										"nodeType": "StructuredDocumentation",
+										"src": "733:115:0",
+										"text": " @dev Check if the user's wallet is frozen.\n @param _user The address of the user to check."
+									},
+									"functionSelector": "10d74732",
+									"id": 27,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "checkWalletFrozen",
+									"nameLocation": "862:17:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 25,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 24,
+												"mutability": "mutable",
+												"name": "_user",
+												"nameLocation": "888:5:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 27,
+												"src": "880:13:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 23,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "880:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "879:15:0"
+									},
+									"returnParameters": {
+										"id": 26,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "908:0:0"
+									},
+									"scope": 28,
+									"src": "853:56:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 29,
+							"src": "65:846:0",
+							"usedErrors": [],
+							"usedEvents": []
+						}
+					],
+					"src": "39:872:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

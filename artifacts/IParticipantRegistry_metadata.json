@@ -1,0 +1,126 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "checkTokenPaused",
+				"outputs": [],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_from",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "_to",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_amount",
+						"type": "uint256"
+					}
+				],
+				"name": "checkTransferCompliance",
+				"outputs": [],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_user",
+						"type": "address"
+					}
+				],
+				"name": "checkUserVerification",
+				"outputs": [],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_user",
+						"type": "address"
+					}
+				],
+				"name": "checkWalletFrozen",
+				"outputs": [],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"checkTokenPaused()": {
+					"details": "Check if the token is paused."
+				},
+				"checkTransferCompliance(address,address,uint256)": {
+					"details": "Check if the transfer is allowed by compliance rules.",
+					"params": {
+						"_amount": "The amount to transfer.",
+						"_from": "The address of the sender.",
+						"_to": "The address of the recipient."
+					}
+				},
+				"checkUserVerification(address)": {
+					"details": "Check if the user is verified in the Identity Registry.",
+					"params": {
+						"_user": "The address of the user to check."
+					}
+				},
+				"checkWalletFrozen(address)": {
+					"details": "Check if the user's wallet is frozen.",
+					"params": {
+						"_user": "The address of the user to check."
+					}
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IParticipantRegistry.sol": "IParticipantRegistry"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IParticipantRegistry.sol": {
+			"keccak256": "0x9c507432a297181df46c3567f7af6fa92de4e04c0acfa5c34e2d85c82f37dc40",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://6bf78894fb083d13eb64c095a1deea0789393b4acfcdf3547e2745fc2a890372",
+				"dweb:/ipfs/QmbrD97iJ6tmP8UWvxoYb68GUrGVJKjaMoRui2qT2gjCho"
+			]
+		}
+	},
+	"version": 1
+}

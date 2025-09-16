@@ -1,0 +1,402 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "investorAddress",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "uint16",
+						"name": "country",
+						"type": "uint16"
+					}
+				],
+				"name": "CountryModified",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "contract IIdentity",
+						"name": "oldIdentity",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "contract IIdentity",
+						"name": "newIdentity",
+						"type": "address"
+					}
+				],
+				"name": "IdentityModified",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "identityRegistry",
+						"type": "address"
+					}
+				],
+				"name": "IdentityRegistryBound",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "identityRegistry",
+						"type": "address"
+					}
+				],
+				"name": "IdentityRegistryUnbound",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "investorAddress",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "contract IIdentity",
+						"name": "identity",
+						"type": "address"
+					}
+				],
+				"name": "IdentityStored",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "investorAddress",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "contract IIdentity",
+						"name": "identity",
+						"type": "address"
+					}
+				],
+				"name": "IdentityUnstored",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_userAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "contract IIdentity",
+						"name": "_identity",
+						"type": "address"
+					},
+					{
+						"internalType": "uint16",
+						"name": "_country",
+						"type": "uint16"
+					}
+				],
+				"name": "addIdentityToStorage",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_identityRegistry",
+						"type": "address"
+					}
+				],
+				"name": "bindIdentityRegistry",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "linkedIdentityRegistries",
+				"outputs": [
+					{
+						"internalType": "address[]",
+						"name": "",
+						"type": "address[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_userAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "contract IIdentity",
+						"name": "_identity",
+						"type": "address"
+					}
+				],
+				"name": "modifyStoredIdentity",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_userAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint16",
+						"name": "_country",
+						"type": "uint16"
+					}
+				],
+				"name": "modifyStoredInvestorCountry",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_userAddress",
+						"type": "address"
+					}
+				],
+				"name": "removeIdentityFromStorage",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_userAddress",
+						"type": "address"
+					}
+				],
+				"name": "storedIdentity",
+				"outputs": [
+					{
+						"internalType": "contract IIdentity",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_userAddress",
+						"type": "address"
+					}
+				],
+				"name": "storedInvestorCountry",
+				"outputs": [
+					{
+						"internalType": "uint16",
+						"name": "",
+						"type": "uint16"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_identityRegistry",
+						"type": "address"
+					}
+				],
+				"name": "unbindIdentityRegistry",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"addIdentityToStorage(address,address,uint16)": {
+					"details": "adds an identity contract corresponding to a user address in the storage.  Requires that the user doesn't have an identity contract already registered.  This function can only be called by an address set as agent of the smart contract",
+					"params": {
+						"_country": "The country of the investor  emits `IdentityStored` event",
+						"_identity": "The address of the user's identity contract",
+						"_userAddress": "The address of the user"
+					}
+				},
+				"bindIdentityRegistry(address)": {
+					"params": {
+						"_identityRegistry": "The identity registry address to add."
+					}
+				},
+				"linkedIdentityRegistries()": {
+					"details": "Returns the identity registries linked to the storage contract"
+				},
+				"modifyStoredIdentity(address,address)": {
+					"details": "Updates an identity contract corresponding to a user address.  Requires that the user address should be the owner of the identity contract.  Requires that the user should have an identity contract already deployed that will be replaced.  This function can only be called by an address set as agent of the smart contract",
+					"params": {
+						"_identity": "The address of the user's new identity contract  emits `IdentityModified` event",
+						"_userAddress": "The address of the user"
+					}
+				},
+				"modifyStoredInvestorCountry(address,uint16)": {
+					"details": "Updates the country corresponding to a user address.  Requires that the user should have an identity contract already deployed that will be replaced.  This function can only be called by an address set as agent of the smart contract",
+					"params": {
+						"_country": "The new country of the user  emits `CountryModified` event",
+						"_userAddress": "The address of the user"
+					}
+				},
+				"removeIdentityFromStorage(address)": {
+					"details": "Removes an user from the storage.  Requires that the user have an identity contract already deployed that will be deleted.  This function can only be called by an address set as agent of the smart contract",
+					"params": {
+						"_userAddress": "The address of the user to be removed  emits `IdentityUnstored` event"
+					}
+				},
+				"storedIdentity(address)": {
+					"details": "Returns the onchainID of an investor.",
+					"params": {
+						"_userAddress": "The wallet of the investor"
+					}
+				},
+				"storedInvestorCountry(address)": {
+					"details": "Returns the country code of an investor.",
+					"params": {
+						"_userAddress": "The wallet of the investor"
+					}
+				},
+				"unbindIdentityRegistry(address)": {
+					"params": {
+						"_identityRegistry": "The identity registry address to remove."
+					}
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"events": {
+				"CountryModified(address,uint16)": {
+					"notice": "this event is emitted when an Identity's country has been updated  the event is emitted by the 'updateCountry' function  `investorAddress` is the address on which the country has been updated  `country` is the numeric code (ISO 3166-1) of the new country"
+				},
+				"IdentityModified(address,address)": {
+					"notice": "this event is emitted when an Identity has been updated  the event is emitted by the 'updateIdentity' function  `oldIdentity` is the old Identity contract's address to update  `newIdentity` is the new Identity contract's"
+				},
+				"IdentityRegistryBound(address)": {
+					"notice": "this event is emitted when an Identity Registry is bound to the storage contract  the event is emitted by the 'addIdentityRegistry' function  `identityRegistry` is the address of the identity registry added"
+				},
+				"IdentityRegistryUnbound(address)": {
+					"notice": "this event is emitted when an Identity Registry is unbound from the storage contract  the event is emitted by the 'removeIdentityRegistry' function  `identityRegistry` is the address of the identity registry removed"
+				},
+				"IdentityStored(address,address)": {
+					"notice": "this event is emitted when an Identity is registered into the storage contract.  the event is emitted by the 'registerIdentity' function  `investorAddress` is the address of the investor's wallet  `identity` is the address of the Identity smart contract (onchainID)"
+				},
+				"IdentityUnstored(address,address)": {
+					"notice": "this event is emitted when an Identity is removed from the storage contract.  the event is emitted by the 'deleteIdentity' function  `investorAddress` is the address of the investor's wallet  `identity` is the address of the Identity smart contract (onchainID)"
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"bindIdentityRegistry(address)": {
+					"notice": "Adds an identity registry as agent of the Identity Registry Storage Contract.  This function can only be called by the wallet set as owner of the smart contract  This function adds the identity registry to the list of identityRegistries linked to the storage contract  cannot bind more than 300 IR to 1 IRS"
+				},
+				"unbindIdentityRegistry(address)": {
+					"notice": "Removes an identity registry from being agent of the Identity Registry Storage Contract.  This function can only be called by the wallet set as owner of the smart contract  This function removes the identity registry from the list of identityRegistries linked to the storage contract"
+				}
+			},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Compliance/interfaces/IIdentityRegistryStorage.sol": "IIdentityRegistryStorage"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@onchain-id/solidity/contracts/interface/IERC734.sol": {
+			"keccak256": "0xd9c0a7eaf1425443736d8e42a43ed100c3049b4fbae2b34e65a63138d0919e11",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://8f65bc4e6e90db2cb98b6eff957dd1c241cc82c10808010bc3935c8f54715564",
+				"dweb:/ipfs/Qmf6U5vSP687zfoung8dWUT2msDyaTQ52jVvdaKUoePshR"
+			]
+		},
+		"@onchain-id/solidity/contracts/interface/IERC735.sol": {
+			"keccak256": "0xfa4b3db1797200f8de14bb73813f678eb08589c393af9a9e8e0c7b6165de84ea",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://bb7ec6f7845267803d193fbaf2f2cb93e5ecf11b21af8905511c4363b556084c",
+				"dweb:/ipfs/QmUzzVCpCgtUUKsRtMexVpdBDpi6ujh6uCca9CTcWZeALY"
+			]
+		},
+		"@onchain-id/solidity/contracts/interface/IIdentity.sol": {
+			"keccak256": "0xaab77598ab6230be2e47bbb9541462e47777847ff5254eeb830718dd943d9292",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://853ba5bf127bb2e41780d92b163f31677fd632a2e70ca72a3e7c6e3f7a84c460",
+				"dweb:/ipfs/QmXaEveMNcNzf97nfckP6D716aUHVSYNF6e5zdjt4UWvh9"
+			]
+		},
+		"contracts/Compliance/interfaces/IIdentityRegistryStorage.sol": {
+			"keccak256": "0x571826d7ea87b2f10871f0b0872df92fba820c80be128ea4fd07ef6e4c629b9d",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://7cf52dcfaa76ad1fe492f90f117f35514ea7bd0be1f4e364e8ffd3af6afb7e61",
+				"dweb:/ipfs/QmdTnptSscZP4QoYA5ZAufiVbpV8RmhGoc6t4FN7nd2eF3"
+			]
+		}
+	},
+	"version": 1
+}

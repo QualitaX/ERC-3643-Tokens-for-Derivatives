@@ -1,0 +1,91 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [],
+				"name": "decimals",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getLatestEsr",
+				"outputs": [
+					{
+						"internalType": "int256",
+						"name": "esr",
+						"type": "int256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "numOfDays",
+						"type": "uint256"
+					}
+				],
+				"name": "getRollingAvgEsrForNdays",
+				"outputs": [
+					{
+						"internalType": "int256",
+						"name": "esr",
+						"type": "int256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/ITreehouse.sol": "ITreehouse"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/ITreehouse.sol": {
+			"keccak256": "0xf4b3e208949fb1c4beeca95b678795611fe081a2273d1192c842682eba989f9e",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://6657930630230290819b61c23cd18c9a0ac2d6ff785f22c03c3fbfdeee4f726f",
+				"dweb:/ipfs/QmUQYVX9mMBD1XKvLxPD57p2CdgD5QLgr7arPthofcbQJ8"
+			]
+		}
+	},
+	"version": 1
+}

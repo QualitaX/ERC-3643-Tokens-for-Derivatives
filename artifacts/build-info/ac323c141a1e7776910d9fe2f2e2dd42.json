@@ -1,0 +1,3151 @@
+{
+	"id": "ac323c141a1e7776910d9fe2f2e2dd42",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.30",
+	"solcLongVersion": "0.8.30+commit.73712a01",
+	"input": {
+		"language": "Solidity",
+		"sources": {
+			"contracts/interfaces/IERC6123.sol": {
+				"content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.19;\n\n/*------------------------------------------- DESCRIPTION ---------------------------------------------------------------------------------------*/\n\n/**\n * @title ERC6123 Smart Derivative Contract\n * @dev Interface specification for a Smart Derivative Contract, which specifies the post-trade live cycle of an OTC financial derivative in a completely deterministic way.\n *\n * A Smart Derivative Contract (SDC) is a deterministic settlement protocol which aims is to remove many inefficiencies in (collateralized) financial transactions.\n * Settlement (Delivery versus payment) and Counterparty Credit Risk are removed by construction.\n *\n * Special Case OTC-Derivatives: In case of a collateralized OTC derivative the SDC nets contract-based and collateral flows . As result, the SDC generates a stream of\n * reflecting the settlement of a referenced underlying. The settlement cash flows may be daily (which is the standard frequency in traditional markets)\n * or at higher frequencies.\n * With each settlement flow the change is the (discounting adjusted) net present value of the underlying contract is exchanged and the value of the contract is reset to zero.\n *\n * To automatically process settlement, parties need to provide sufficient initial funding and termination fees at the\n * beginning of each settlement cycle. Through a settlement cycle the margin amounts are locked. Simplified, the contract reverts the classical scheme of\n * 1) underlying valuation, then 2) funding of a margin call to\n * 1) pre-funding of a margin buffer (a token), then 2) settlement.\n *\n * A SDC may automatically terminates the financial contract if there is insufficient pre-funding or if the settlement amount exceeds a\n * prefunded margin balance. Beyond mutual termination is also intended by the function specification.\n *\n * Events and Functionality specify the entire live cycle: TradeInception, TradeConfirmation, TradeTermination, Margin-Account-Mechanics, Valuation and Settlement.\n *\n * The process can be described by time points and time-intervals which are associated with well defined states:\n * <ol>\n *  <li>t < T* (befrore incept).\n *  </li>\n *  <li>\n *      The process runs in cycles. Let i = 0,1,2,... denote the index of the cycle. Within each cycle there are times\n *      T_{i,0}, T_{i,1}, T_{i,2}, T_{i,3} with T_{i,1} = The Activation of the Trade (initial funding provided), T_{i,1} = request valuation from oracle, T_{i,2} = perform settlement on given valuation, T_{i+1,0} = T_{i,3}.\n *  </li>\n *  <li>\n *      Given this time discretization the states are assigned to time points and time intervalls:\n *      <dl>\n *          <dt>Idle</dt>\n *          <dd>Before incept or after terminate</dd>\n *\n *          <dt>Initiation</dt>\n *          <dd>T* < t < T_{0}, where T* is time of incept and T_{0} = T_{0,0}</dd>\n *\n *          <dt>InTransfer (Initiation Phase)</dt>\n *          <dd>T_{i,0} < t < T_{i,1}</dd>\n *\n *          <dt>Settled</dt>\n *          <dd>t = T_{i,1}</dd>\n *\n *          <dt>ValuationAndSettlement</dt>\n *          <dd>T_{i,1} < t < T_{i,2}</dd>\n *\n *          <dt>InTransfer (Settlement Phase)</dt>\n *          <dd>T_{i,2} < t < T_{i,3}</dd>\n *\n *          <dt>Settled</dt>\n *          <dd>t = T_{i,3}</dd>\n *      </dl>\n *  </li>\n * </ol>\n */\n\ninterface IERC6123 {\n\n    /*------------------------------------------- EVENTS ---------------------------------------------------------------------------------------*/\n\n    /* Events related to trade inception */\n\n    /**\n     * @dev Emitted  when a new trade is incepted from a eligible counterparty\n     * @param initiator is the address from which trade was incepted\n     * @param withParty is the party the inceptor wants to trade with\n     * @param tradeId is the trade ID (e.g. generated internally)\n     * @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n     * @param position is the position the inceptor has in that trade\n     * @param paymentAmount is the payment amount which can be positive or negative (viewed from the inceptor)\n     * @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)\n     */\n    event TradeIncepted(address initiator, address withParty, string tradeId, string tradeData, int position, int256 paymentAmount, string initialSettlementData);\n\n    /**\n     * @dev Emitted when an incepted trade is confirmed by the opposite counterparty\n     * @param confirmer the confirming party\n     * @param tradeId the trade identifier\n     */\n    event TradeConfirmed(address confirmer, string tradeId);\n\n    /**\n     * @dev Emitted when an incepted trade is canceled by the incepting counterparty\n     * @param initiator is the address from which trade was canceled\n     * @param tradeId the trade identifier\n     */\n    event TradeCanceled(address initiator, string tradeId);\n\n    /* Events related to activation and termination */\n\n    /**\n     * @dev Emitted when a confirmed trade is set to active - e.g. when termination fee amounts are provided\n     * @param tradeId the trade identifier of the activated trade\n     */\n    event TradeActivated(string tradeId);\n\n    /**\n     * @dev Emitted when an active trade is terminated\n     * @param tradeId the trade identifier of the activated trade\n     * @param cause string holding data associated with the termination, e.g. transactionData upon a failed transaction\n     */\n    event TradeTerminated(string tradeId, string cause);\n\n    /* Events related to the settlement process */\n\n    /**\n     * @dev Emitted when a settlement gets requested\n     * @param initiator the address of the requesting party\n     * @param tradeData holding the stored trade data\n     * @param lastSettlementData holding the settlementdata from previous settlement (next settlement will be the increment of next valuation compared to former valuation)\n     */\n    event SettlementRequested(address initiator, string tradeData, string lastSettlementData);\n\n    /**\n     * @dev Emitted when Settlement has been valued and settlement phase is initiated\n     * @param initiator the address of the requesting party\n     * @param settlementAmount the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.\n     * @param settlementData. the tripple (product, previousSettlementData, settlementData) determines the settlementAmount.\n     */\n    event SettlementEvaluated(address initiator, int256 settlementAmount, string settlementData);\n\n    /**\n     * @dev Emitted when settlement process has been finished\n     */\n    event SettlementTransferred(string transactionData);\n\n    /**\n     * @dev Emitted when settlement process has been finished\n     */\n    event SettlementFailed(string transactionData);\n\n    /* Events related to trade termination */\n\n    /**\n     * @dev Emitted when a counterparty proactively requests an early termination of the underlying trade\n     * @param initiator the address of the requesting party\n     * @param terminationPayment an agreed termination amount (viewed from the requester)\n     * @param tradeId the trade identifier which is supposed to be terminated\n     * @param terminationTerms termination terms\n     */\n    event TradeTerminationRequest(address initiator, string tradeId, int256 terminationPayment, string terminationTerms);\n\n    /**\n     * @dev Emitted when early termination request is confirmed by the opposite party\n     * @param confirmer the party which confirms the trade termination\n     * @param tradeId the trade identifier which is supposed to be terminated\n     * @param terminationPayment an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)\n     * @param terminationTerms termination terms\n     */\n    event TradeTerminationConfirmed(address confirmer, string tradeId, int256 terminationPayment, string terminationTerms);\n\n    /**\n     * @dev Emitted when a counterparty cancels its requests an early termination of the underlying trade\n     * @param initiator the address of the requesting party\n     * @param tradeId the trade identifier which is supposed to be terminated\n     * @param terminationTerms termination terms\n     */\n    event TradeTerminationCanceled(address initiator, string tradeId, string terminationTerms);\n\n    /*------------------------------------------- FUNCTIONALITY ---------------------------------------------------------------------------------------*/\n\n    /// Trade Inception\n\n    /**\n     * @notice Incepts a trade, stores trade data\n     * @dev emits a {TradeIncepted} event\n     * @param withParty is the party the inceptor wants to trade with\n     * @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n     * @param position is the position the inceptor has in that trade\n     * @param paymentAmount is the payment amount which can be positive or negative (viewed from the inceptor)\n     * @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)\n     * @return the tradeId uniquely determining this trade.\n     */\n    function inceptTrade(address withParty, string memory tradeData, int position, int256 paymentAmount, string memory initialSettlementData) external returns (string memory);\n\n    /**\n     * @notice Performs a matching of provided trade data and settlement data of a previous trade inception\n     * @dev emits a {TradeConfirmed} event if trade data match and emits a {TradeActivated} if trade becomes active or {TradeTerminated} if not\n     * @param withParty is the party the confirmer wants to trade with\n     * @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n     * @param position is the position the confirmer has in that trade (negative of the position the inceptor has in the trade)\n     * @param paymentAmount is the payment amount which can be positive or negative (viewed from the confirmer, negative of the inceptor's view)\n     * @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)\n     */\n     function confirmTrade(address withParty, string memory tradeData, int position, int256 paymentAmount, string memory initialSettlementData) external;\n\n    /**\n     * @notice Performs a matching of provided trade data and settlement data of a previous trade inception. Required to be called by inceptor.\n     * @dev emits a {TradeCanceled} event if trade data match and msg.sender agrees with the party that incepted the trade.\n     * @param withParty is the party the inceptor wants to trade with\n     * @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n     * @param position is the position the inceptor has in that trade\n     * @param paymentAmount is the payment amount which can be positive or negative (viewed from the inceptor)\n     * @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)\n     */\n    function cancelTrade(address withParty, string memory tradeData, int position, int256 paymentAmount, string memory initialSettlementData) external;\n\n    /// Settlement Cycle: Settlement\n\n    /**\n     * @notice Called to trigger a (maybe external) valuation of the underlying contract and afterwards the according settlement process\n     * @dev emits a {SettlementRequested}\n     */\n    function initiateSettlement() external;\n\n    /**\n     * @notice Called to trigger according settlement on chain-balances callback for initiateSettlement() event handler\n     * @dev perform settlement checks, may initiate transfers and emits {SettlementEvaluated}\n     * @param settlementAmount the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.\n     * @param settlementData. the tripple (product, previousSettlementData, settlementData) determines the settlementAmount.\n     */\n    function performSettlement(int256 settlementAmount, string memory settlementData) external;\n\n\n    /**\n     * @notice May get called from outside to to finish a transfer (callback). The trade decides on how to proceed based on success flag\n     * @param success tells the protocol whether transfer was successful\n     * @param transactionData data associtated with the transfer, will be emitted via the events.\n     * @dev emit a {SettlementTransferred} or a {SettlementFailed} event. May emit a {TradeTerminated} event.\n     */\n    function afterTransfer(bool success, string memory transactionData) external;\n\n    /// Trade termination\n\n    /**\n     * @notice Called from a counterparty to request a mutual termination\n     * @dev emits a {TradeTerminationRequest}\n     * @param tradeId the trade identifier which is supposed to be terminated\n     * @param terminationPayment an agreed termination amount (viewed from the requester)\n     * @param terminationTerms the termination terms to be stored on chain.\n     */\n    function requestTradeTermination(string memory tradeId, int256 terminationPayment, string memory terminationTerms) external;\n\n    /**\n     * @notice Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed\n     * @dev emits a {TradeTerminationConfirmed}\n     * @param tradeId the trade identifier which is supposed to be terminated\n     * @param terminationPayment an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)\n     * @param terminationTerms the termination terms to be stored on chain.\n     */\n    function confirmTradeTermination(string memory tradeId, int256 terminationPayment, string memory terminationTerms) external;\n\n    /**\n     * @notice Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed\n     * @dev emits a {TradeTerminationCanceled}\n     * @param tradeId the trade identifier which is supposed to be terminated\n     * @param terminationPayment an agreed termination amount (viewed from the requester)\n     * @param terminationTerms the termination terms\n     */\n    function cancelTradeTermination(string memory tradeId, int256 terminationPayment, string memory terminationTerms) external;\n}"
+			}
+		},
+		"settings": {
+			"optimizer": {
+				"enabled": true,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			},
+			"remappings": []
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/interfaces/IERC6123.sol": {
+				"IERC6123": {
+					"abi": [
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "initiator",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "int256",
+									"name": "settlementAmount",
+									"type": "int256"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "settlementData",
+									"type": "string"
+								}
+							],
+							"name": "SettlementEvaluated",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "transactionData",
+									"type": "string"
+								}
+							],
+							"name": "SettlementFailed",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "initiator",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeData",
+									"type": "string"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "lastSettlementData",
+									"type": "string"
+								}
+							],
+							"name": "SettlementRequested",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "transactionData",
+									"type": "string"
+								}
+							],
+							"name": "SettlementTransferred",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								}
+							],
+							"name": "TradeActivated",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "initiator",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								}
+							],
+							"name": "TradeCanceled",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "confirmer",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								}
+							],
+							"name": "TradeConfirmed",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "initiator",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "withParty",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeData",
+									"type": "string"
+								},
+								{
+									"indexed": false,
+									"internalType": "int256",
+									"name": "position",
+									"type": "int256"
+								},
+								{
+									"indexed": false,
+									"internalType": "int256",
+									"name": "paymentAmount",
+									"type": "int256"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "initialSettlementData",
+									"type": "string"
+								}
+							],
+							"name": "TradeIncepted",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "cause",
+									"type": "string"
+								}
+							],
+							"name": "TradeTerminated",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "initiator",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "terminationTerms",
+									"type": "string"
+								}
+							],
+							"name": "TradeTerminationCanceled",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "confirmer",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"indexed": false,
+									"internalType": "int256",
+									"name": "terminationPayment",
+									"type": "int256"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "terminationTerms",
+									"type": "string"
+								}
+							],
+							"name": "TradeTerminationConfirmed",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "initiator",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"indexed": false,
+									"internalType": "int256",
+									"name": "terminationPayment",
+									"type": "int256"
+								},
+								{
+									"indexed": false,
+									"internalType": "string",
+									"name": "terminationTerms",
+									"type": "string"
+								}
+							],
+							"name": "TradeTerminationRequest",
+							"type": "event"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "bool",
+									"name": "success",
+									"type": "bool"
+								},
+								{
+									"internalType": "string",
+									"name": "transactionData",
+									"type": "string"
+								}
+							],
+							"name": "afterTransfer",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "address",
+									"name": "withParty",
+									"type": "address"
+								},
+								{
+									"internalType": "string",
+									"name": "tradeData",
+									"type": "string"
+								},
+								{
+									"internalType": "int256",
+									"name": "position",
+									"type": "int256"
+								},
+								{
+									"internalType": "int256",
+									"name": "paymentAmount",
+									"type": "int256"
+								},
+								{
+									"internalType": "string",
+									"name": "initialSettlementData",
+									"type": "string"
+								}
+							],
+							"name": "cancelTrade",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"internalType": "int256",
+									"name": "terminationPayment",
+									"type": "int256"
+								},
+								{
+									"internalType": "string",
+									"name": "terminationTerms",
+									"type": "string"
+								}
+							],
+							"name": "cancelTradeTermination",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "address",
+									"name": "withParty",
+									"type": "address"
+								},
+								{
+									"internalType": "string",
+									"name": "tradeData",
+									"type": "string"
+								},
+								{
+									"internalType": "int256",
+									"name": "position",
+									"type": "int256"
+								},
+								{
+									"internalType": "int256",
+									"name": "paymentAmount",
+									"type": "int256"
+								},
+								{
+									"internalType": "string",
+									"name": "initialSettlementData",
+									"type": "string"
+								}
+							],
+							"name": "confirmTrade",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"internalType": "int256",
+									"name": "terminationPayment",
+									"type": "int256"
+								},
+								{
+									"internalType": "string",
+									"name": "terminationTerms",
+									"type": "string"
+								}
+							],
+							"name": "confirmTradeTermination",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "address",
+									"name": "withParty",
+									"type": "address"
+								},
+								{
+									"internalType": "string",
+									"name": "tradeData",
+									"type": "string"
+								},
+								{
+									"internalType": "int256",
+									"name": "position",
+									"type": "int256"
+								},
+								{
+									"internalType": "int256",
+									"name": "paymentAmount",
+									"type": "int256"
+								},
+								{
+									"internalType": "string",
+									"name": "initialSettlementData",
+									"type": "string"
+								}
+							],
+							"name": "inceptTrade",
+							"outputs": [
+								{
+									"internalType": "string",
+									"name": "",
+									"type": "string"
+								}
+							],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "initiateSettlement",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "int256",
+									"name": "settlementAmount",
+									"type": "int256"
+								},
+								{
+									"internalType": "string",
+									"name": "settlementData",
+									"type": "string"
+								}
+							],
+							"name": "performSettlement",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [
+								{
+									"internalType": "string",
+									"name": "tradeId",
+									"type": "string"
+								},
+								{
+									"internalType": "int256",
+									"name": "terminationPayment",
+									"type": "int256"
+								},
+								{
+									"internalType": "string",
+									"name": "terminationTerms",
+									"type": "string"
+								}
+							],
+							"name": "requestTradeTermination",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"details": "Interface specification for a Smart Derivative Contract, which specifies the post-trade live cycle of an OTC financial derivative in a completely deterministic way. A Smart Derivative Contract (SDC) is a deterministic settlement protocol which aims is to remove many inefficiencies in (collateralized) financial transactions. Settlement (Delivery versus payment) and Counterparty Credit Risk are removed by construction. Special Case OTC-Derivatives: In case of a collateralized OTC derivative the SDC nets contract-based and collateral flows . As result, the SDC generates a stream of reflecting the settlement of a referenced underlying. The settlement cash flows may be daily (which is the standard frequency in traditional markets) or at higher frequencies. With each settlement flow the change is the (discounting adjusted) net present value of the underlying contract is exchanged and the value of the contract is reset to zero. To automatically process settlement, parties need to provide sufficient initial funding and termination fees at the beginning of each settlement cycle. Through a settlement cycle the margin amounts are locked. Simplified, the contract reverts the classical scheme of 1) underlying valuation, then 2) funding of a margin call to 1) pre-funding of a margin buffer (a token), then 2) settlement. A SDC may automatically terminates the financial contract if there is insufficient pre-funding or if the settlement amount exceeds a prefunded margin balance. Beyond mutual termination is also intended by the function specification. Events and Functionality specify the entire live cycle: TradeInception, TradeConfirmation, TradeTermination, Margin-Account-Mechanics, Valuation and Settlement. The process can be described by time points and time-intervals which are associated with well defined states: <ol>  <li>t < T* (befrore incept).  </li>  <li>      The process runs in cycles. Let i = 0,1,2,... denote the index of the cycle. Within each cycle there are times      T_{i,0}, T_{i,1}, T_{i,2}, T_{i,3} with T_{i,1} = The Activation of the Trade (initial funding provided), T_{i,1} = request valuation from oracle, T_{i,2} = perform settlement on given valuation, T_{i+1,0} = T_{i,3}.  </li>  <li>      Given this time discretization the states are assigned to time points and time intervalls:      <dl>          <dt>Idle</dt>          <dd>Before incept or after terminate</dd>          <dt>Initiation</dt>          <dd>T* < t < T_{0}, where T* is time of incept and T_{0} = T_{0,0}</dd>          <dt>InTransfer (Initiation Phase)</dt>          <dd>T_{i,0} < t < T_{i,1}</dd>          <dt>Settled</dt>          <dd>t = T_{i,1}</dd>          <dt>ValuationAndSettlement</dt>          <dd>T_{i,1} < t < T_{i,2}</dd>          <dt>InTransfer (Settlement Phase)</dt>          <dd>T_{i,2} < t < T_{i,3}</dd>          <dt>Settled</dt>          <dd>t = T_{i,3}</dd>      </dl>  </li> </ol>",
+						"events": {
+							"SettlementEvaluated(address,int256,string)": {
+								"details": "Emitted when Settlement has been valued and settlement phase is initiated",
+								"params": {
+									"initiator": "the address of the requesting party",
+									"settlementAmount": "the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.",
+									"settlementData": ". the tripple (product, previousSettlementData, settlementData) determines the settlementAmount."
+								}
+							},
+							"SettlementFailed(string)": {
+								"details": "Emitted when settlement process has been finished"
+							},
+							"SettlementRequested(address,string,string)": {
+								"details": "Emitted when a settlement gets requested",
+								"params": {
+									"initiator": "the address of the requesting party",
+									"lastSettlementData": "holding the settlementdata from previous settlement (next settlement will be the increment of next valuation compared to former valuation)",
+									"tradeData": "holding the stored trade data"
+								}
+							},
+							"SettlementTransferred(string)": {
+								"details": "Emitted when settlement process has been finished"
+							},
+							"TradeActivated(string)": {
+								"details": "Emitted when a confirmed trade is set to active - e.g. when termination fee amounts are provided",
+								"params": {
+									"tradeId": "the trade identifier of the activated trade"
+								}
+							},
+							"TradeCanceled(address,string)": {
+								"details": "Emitted when an incepted trade is canceled by the incepting counterparty",
+								"params": {
+									"initiator": "is the address from which trade was canceled",
+									"tradeId": "the trade identifier"
+								}
+							},
+							"TradeConfirmed(address,string)": {
+								"details": "Emitted when an incepted trade is confirmed by the opposite counterparty",
+								"params": {
+									"confirmer": "the confirming party",
+									"tradeId": "the trade identifier"
+								}
+							},
+							"TradeIncepted(address,address,string,string,int256,int256,string)": {
+								"details": "Emitted  when a new trade is incepted from a eligible counterparty",
+								"params": {
+									"initialSettlementData": "the initial settlement data (e.g. initial market data at which trade was incepted)",
+									"initiator": "is the address from which trade was incepted",
+									"paymentAmount": "is the payment amount which can be positive or negative (viewed from the inceptor)",
+									"position": "is the position the inceptor has in that trade",
+									"tradeData": "a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml",
+									"tradeId": "is the trade ID (e.g. generated internally)",
+									"withParty": "is the party the inceptor wants to trade with"
+								}
+							},
+							"TradeTerminated(string,string)": {
+								"details": "Emitted when an active trade is terminated",
+								"params": {
+									"cause": "string holding data associated with the termination, e.g. transactionData upon a failed transaction",
+									"tradeId": "the trade identifier of the activated trade"
+								}
+							},
+							"TradeTerminationCanceled(address,string,string)": {
+								"details": "Emitted when a counterparty cancels its requests an early termination of the underlying trade",
+								"params": {
+									"initiator": "the address of the requesting party",
+									"terminationTerms": "termination terms",
+									"tradeId": "the trade identifier which is supposed to be terminated"
+								}
+							},
+							"TradeTerminationConfirmed(address,string,int256,string)": {
+								"details": "Emitted when early termination request is confirmed by the opposite party",
+								"params": {
+									"confirmer": "the party which confirms the trade termination",
+									"terminationPayment": "an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)",
+									"terminationTerms": "termination terms",
+									"tradeId": "the trade identifier which is supposed to be terminated"
+								}
+							},
+							"TradeTerminationRequest(address,string,int256,string)": {
+								"details": "Emitted when a counterparty proactively requests an early termination of the underlying trade",
+								"params": {
+									"initiator": "the address of the requesting party",
+									"terminationPayment": "an agreed termination amount (viewed from the requester)",
+									"terminationTerms": "termination terms",
+									"tradeId": "the trade identifier which is supposed to be terminated"
+								}
+							}
+						},
+						"kind": "dev",
+						"methods": {
+							"afterTransfer(bool,string)": {
+								"details": "emit a {SettlementTransferred} or a {SettlementFailed} event. May emit a {TradeTerminated} event.",
+								"params": {
+									"success": "tells the protocol whether transfer was successful",
+									"transactionData": "data associtated with the transfer, will be emitted via the events."
+								}
+							},
+							"cancelTrade(address,string,int256,int256,string)": {
+								"details": "emits a {TradeCanceled} event if trade data match and msg.sender agrees with the party that incepted the trade.",
+								"params": {
+									"initialSettlementData": "the initial settlement data (e.g. initial market data at which trade was incepted)",
+									"paymentAmount": "is the payment amount which can be positive or negative (viewed from the inceptor)",
+									"position": "is the position the inceptor has in that trade",
+									"tradeData": "a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml",
+									"withParty": "is the party the inceptor wants to trade with"
+								}
+							},
+							"cancelTradeTermination(string,int256,string)": {
+								"details": "emits a {TradeTerminationCanceled}",
+								"params": {
+									"terminationPayment": "an agreed termination amount (viewed from the requester)",
+									"terminationTerms": "the termination terms",
+									"tradeId": "the trade identifier which is supposed to be terminated"
+								}
+							},
+							"confirmTrade(address,string,int256,int256,string)": {
+								"details": "emits a {TradeConfirmed} event if trade data match and emits a {TradeActivated} if trade becomes active or {TradeTerminated} if not",
+								"params": {
+									"initialSettlementData": "the initial settlement data (e.g. initial market data at which trade was incepted)",
+									"paymentAmount": "is the payment amount which can be positive or negative (viewed from the confirmer, negative of the inceptor's view)",
+									"position": "is the position the confirmer has in that trade (negative of the position the inceptor has in the trade)",
+									"tradeData": "a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml",
+									"withParty": "is the party the confirmer wants to trade with"
+								}
+							},
+							"confirmTradeTermination(string,int256,string)": {
+								"details": "emits a {TradeTerminationConfirmed}",
+								"params": {
+									"terminationPayment": "an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)",
+									"terminationTerms": "the termination terms to be stored on chain.",
+									"tradeId": "the trade identifier which is supposed to be terminated"
+								}
+							},
+							"inceptTrade(address,string,int256,int256,string)": {
+								"details": "emits a {TradeIncepted} event",
+								"params": {
+									"initialSettlementData": "the initial settlement data (e.g. initial market data at which trade was incepted)",
+									"paymentAmount": "is the payment amount which can be positive or negative (viewed from the inceptor)",
+									"position": "is the position the inceptor has in that trade",
+									"tradeData": "a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml",
+									"withParty": "is the party the inceptor wants to trade with"
+								},
+								"returns": {
+									"_0": "the tradeId uniquely determining this trade."
+								}
+							},
+							"initiateSettlement()": {
+								"details": "emits a {SettlementRequested}"
+							},
+							"performSettlement(int256,string)": {
+								"details": "perform settlement checks, may initiate transfers and emits {SettlementEvaluated}",
+								"params": {
+									"settlementAmount": "the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.",
+									"settlementData": ". the tripple (product, previousSettlementData, settlementData) determines the settlementAmount."
+								}
+							},
+							"requestTradeTermination(string,int256,string)": {
+								"details": "emits a {TradeTerminationRequest}",
+								"params": {
+									"terminationPayment": "an agreed termination amount (viewed from the requester)",
+									"terminationTerms": "the termination terms to be stored on chain.",
+									"tradeId": "the trade identifier which is supposed to be terminated"
+								}
+							}
+						},
+						"title": "ERC6123 Smart Derivative Contract",
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"afterTransfer(bool,string)": "6b7e8648",
+							"cancelTrade(address,string,int256,int256,string)": "5ccc3114",
+							"cancelTradeTermination(string,int256,string)": "838a3b92",
+							"confirmTrade(address,string,int256,int256,string)": "858f0e93",
+							"confirmTradeTermination(string,int256,string)": "08f7490c",
+							"inceptTrade(address,string,int256,int256,string)": "ec11c4e9",
+							"initiateSettlement()": "c78b432e",
+							"performSettlement(int256,string)": "6ba63956",
+							"requestTradeTermination(string,int256,string)": "d19e5133"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"initiator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"settlementAmount\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"settlementData\",\"type\":\"string\"}],\"name\":\"SettlementEvaluated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"transactionData\",\"type\":\"string\"}],\"name\":\"SettlementFailed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"initiator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeData\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"lastSettlementData\",\"type\":\"string\"}],\"name\":\"SettlementRequested\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"transactionData\",\"type\":\"string\"}],\"name\":\"SettlementTransferred\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"}],\"name\":\"TradeActivated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"initiator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"}],\"name\":\"TradeCanceled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"confirmer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"}],\"name\":\"TradeConfirmed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"initiator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"address\",\"name\":\"withParty\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeData\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"position\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"paymentAmount\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"initialSettlementData\",\"type\":\"string\"}],\"name\":\"TradeIncepted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"cause\",\"type\":\"string\"}],\"name\":\"TradeTerminated\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"initiator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"terminationTerms\",\"type\":\"string\"}],\"name\":\"TradeTerminationCanceled\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"confirmer\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"terminationPayment\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"terminationTerms\",\"type\":\"string\"}],\"name\":\"TradeTerminationConfirmed\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"initiator\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"indexed\":false,\"internalType\":\"int256\",\"name\":\"terminationPayment\",\"type\":\"int256\"},{\"indexed\":false,\"internalType\":\"string\",\"name\":\"terminationTerms\",\"type\":\"string\"}],\"name\":\"TradeTerminationRequest\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"},{\"internalType\":\"string\",\"name\":\"transactionData\",\"type\":\"string\"}],\"name\":\"afterTransfer\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"withParty\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"tradeData\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"position\",\"type\":\"int256\"},{\"internalType\":\"int256\",\"name\":\"paymentAmount\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"initialSettlementData\",\"type\":\"string\"}],\"name\":\"cancelTrade\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"terminationPayment\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"terminationTerms\",\"type\":\"string\"}],\"name\":\"cancelTradeTermination\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"withParty\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"tradeData\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"position\",\"type\":\"int256\"},{\"internalType\":\"int256\",\"name\":\"paymentAmount\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"initialSettlementData\",\"type\":\"string\"}],\"name\":\"confirmTrade\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"terminationPayment\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"terminationTerms\",\"type\":\"string\"}],\"name\":\"confirmTradeTermination\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"withParty\",\"type\":\"address\"},{\"internalType\":\"string\",\"name\":\"tradeData\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"position\",\"type\":\"int256\"},{\"internalType\":\"int256\",\"name\":\"paymentAmount\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"initialSettlementData\",\"type\":\"string\"}],\"name\":\"inceptTrade\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"initiateSettlement\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"int256\",\"name\":\"settlementAmount\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"settlementData\",\"type\":\"string\"}],\"name\":\"performSettlement\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"string\",\"name\":\"tradeId\",\"type\":\"string\"},{\"internalType\":\"int256\",\"name\":\"terminationPayment\",\"type\":\"int256\"},{\"internalType\":\"string\",\"name\":\"terminationTerms\",\"type\":\"string\"}],\"name\":\"requestTradeTermination\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"details\":\"Interface specification for a Smart Derivative Contract, which specifies the post-trade live cycle of an OTC financial derivative in a completely deterministic way. A Smart Derivative Contract (SDC) is a deterministic settlement protocol which aims is to remove many inefficiencies in (collateralized) financial transactions. Settlement (Delivery versus payment) and Counterparty Credit Risk are removed by construction. Special Case OTC-Derivatives: In case of a collateralized OTC derivative the SDC nets contract-based and collateral flows . As result, the SDC generates a stream of reflecting the settlement of a referenced underlying. The settlement cash flows may be daily (which is the standard frequency in traditional markets) or at higher frequencies. With each settlement flow the change is the (discounting adjusted) net present value of the underlying contract is exchanged and the value of the contract is reset to zero. To automatically process settlement, parties need to provide sufficient initial funding and termination fees at the beginning of each settlement cycle. Through a settlement cycle the margin amounts are locked. Simplified, the contract reverts the classical scheme of 1) underlying valuation, then 2) funding of a margin call to 1) pre-funding of a margin buffer (a token), then 2) settlement. A SDC may automatically terminates the financial contract if there is insufficient pre-funding or if the settlement amount exceeds a prefunded margin balance. Beyond mutual termination is also intended by the function specification. Events and Functionality specify the entire live cycle: TradeInception, TradeConfirmation, TradeTermination, Margin-Account-Mechanics, Valuation and Settlement. The process can be described by time points and time-intervals which are associated with well defined states: <ol>  <li>t < T* (befrore incept).  </li>  <li>      The process runs in cycles. Let i = 0,1,2,... denote the index of the cycle. Within each cycle there are times      T_{i,0}, T_{i,1}, T_{i,2}, T_{i,3} with T_{i,1} = The Activation of the Trade (initial funding provided), T_{i,1} = request valuation from oracle, T_{i,2} = perform settlement on given valuation, T_{i+1,0} = T_{i,3}.  </li>  <li>      Given this time discretization the states are assigned to time points and time intervalls:      <dl>          <dt>Idle</dt>          <dd>Before incept or after terminate</dd>          <dt>Initiation</dt>          <dd>T* < t < T_{0}, where T* is time of incept and T_{0} = T_{0,0}</dd>          <dt>InTransfer (Initiation Phase)</dt>          <dd>T_{i,0} < t < T_{i,1}</dd>          <dt>Settled</dt>          <dd>t = T_{i,1}</dd>          <dt>ValuationAndSettlement</dt>          <dd>T_{i,1} < t < T_{i,2}</dd>          <dt>InTransfer (Settlement Phase)</dt>          <dd>T_{i,2} < t < T_{i,3}</dd>          <dt>Settled</dt>          <dd>t = T_{i,3}</dd>      </dl>  </li> </ol>\",\"events\":{\"SettlementEvaluated(address,int256,string)\":{\"details\":\"Emitted when Settlement has been valued and settlement phase is initiated\",\"params\":{\"initiator\":\"the address of the requesting party\",\"settlementAmount\":\"the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.\",\"settlementData\":\". the tripple (product, previousSettlementData, settlementData) determines the settlementAmount.\"}},\"SettlementFailed(string)\":{\"details\":\"Emitted when settlement process has been finished\"},\"SettlementRequested(address,string,string)\":{\"details\":\"Emitted when a settlement gets requested\",\"params\":{\"initiator\":\"the address of the requesting party\",\"lastSettlementData\":\"holding the settlementdata from previous settlement (next settlement will be the increment of next valuation compared to former valuation)\",\"tradeData\":\"holding the stored trade data\"}},\"SettlementTransferred(string)\":{\"details\":\"Emitted when settlement process has been finished\"},\"TradeActivated(string)\":{\"details\":\"Emitted when a confirmed trade is set to active - e.g. when termination fee amounts are provided\",\"params\":{\"tradeId\":\"the trade identifier of the activated trade\"}},\"TradeCanceled(address,string)\":{\"details\":\"Emitted when an incepted trade is canceled by the incepting counterparty\",\"params\":{\"initiator\":\"is the address from which trade was canceled\",\"tradeId\":\"the trade identifier\"}},\"TradeConfirmed(address,string)\":{\"details\":\"Emitted when an incepted trade is confirmed by the opposite counterparty\",\"params\":{\"confirmer\":\"the confirming party\",\"tradeId\":\"the trade identifier\"}},\"TradeIncepted(address,address,string,string,int256,int256,string)\":{\"details\":\"Emitted  when a new trade is incepted from a eligible counterparty\",\"params\":{\"initialSettlementData\":\"the initial settlement data (e.g. initial market data at which trade was incepted)\",\"initiator\":\"is the address from which trade was incepted\",\"paymentAmount\":\"is the payment amount which can be positive or negative (viewed from the inceptor)\",\"position\":\"is the position the inceptor has in that trade\",\"tradeData\":\"a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\",\"tradeId\":\"is the trade ID (e.g. generated internally)\",\"withParty\":\"is the party the inceptor wants to trade with\"}},\"TradeTerminated(string,string)\":{\"details\":\"Emitted when an active trade is terminated\",\"params\":{\"cause\":\"string holding data associated with the termination, e.g. transactionData upon a failed transaction\",\"tradeId\":\"the trade identifier of the activated trade\"}},\"TradeTerminationCanceled(address,string,string)\":{\"details\":\"Emitted when a counterparty cancels its requests an early termination of the underlying trade\",\"params\":{\"initiator\":\"the address of the requesting party\",\"terminationTerms\":\"termination terms\",\"tradeId\":\"the trade identifier which is supposed to be terminated\"}},\"TradeTerminationConfirmed(address,string,int256,string)\":{\"details\":\"Emitted when early termination request is confirmed by the opposite party\",\"params\":{\"confirmer\":\"the party which confirms the trade termination\",\"terminationPayment\":\"an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)\",\"terminationTerms\":\"termination terms\",\"tradeId\":\"the trade identifier which is supposed to be terminated\"}},\"TradeTerminationRequest(address,string,int256,string)\":{\"details\":\"Emitted when a counterparty proactively requests an early termination of the underlying trade\",\"params\":{\"initiator\":\"the address of the requesting party\",\"terminationPayment\":\"an agreed termination amount (viewed from the requester)\",\"terminationTerms\":\"termination terms\",\"tradeId\":\"the trade identifier which is supposed to be terminated\"}}},\"kind\":\"dev\",\"methods\":{\"afterTransfer(bool,string)\":{\"details\":\"emit a {SettlementTransferred} or a {SettlementFailed} event. May emit a {TradeTerminated} event.\",\"params\":{\"success\":\"tells the protocol whether transfer was successful\",\"transactionData\":\"data associtated with the transfer, will be emitted via the events.\"}},\"cancelTrade(address,string,int256,int256,string)\":{\"details\":\"emits a {TradeCanceled} event if trade data match and msg.sender agrees with the party that incepted the trade.\",\"params\":{\"initialSettlementData\":\"the initial settlement data (e.g. initial market data at which trade was incepted)\",\"paymentAmount\":\"is the payment amount which can be positive or negative (viewed from the inceptor)\",\"position\":\"is the position the inceptor has in that trade\",\"tradeData\":\"a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\",\"withParty\":\"is the party the inceptor wants to trade with\"}},\"cancelTradeTermination(string,int256,string)\":{\"details\":\"emits a {TradeTerminationCanceled}\",\"params\":{\"terminationPayment\":\"an agreed termination amount (viewed from the requester)\",\"terminationTerms\":\"the termination terms\",\"tradeId\":\"the trade identifier which is supposed to be terminated\"}},\"confirmTrade(address,string,int256,int256,string)\":{\"details\":\"emits a {TradeConfirmed} event if trade data match and emits a {TradeActivated} if trade becomes active or {TradeTerminated} if not\",\"params\":{\"initialSettlementData\":\"the initial settlement data (e.g. initial market data at which trade was incepted)\",\"paymentAmount\":\"is the payment amount which can be positive or negative (viewed from the confirmer, negative of the inceptor's view)\",\"position\":\"is the position the confirmer has in that trade (negative of the position the inceptor has in the trade)\",\"tradeData\":\"a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\",\"withParty\":\"is the party the confirmer wants to trade with\"}},\"confirmTradeTermination(string,int256,string)\":{\"details\":\"emits a {TradeTerminationConfirmed}\",\"params\":{\"terminationPayment\":\"an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)\",\"terminationTerms\":\"the termination terms to be stored on chain.\",\"tradeId\":\"the trade identifier which is supposed to be terminated\"}},\"inceptTrade(address,string,int256,int256,string)\":{\"details\":\"emits a {TradeIncepted} event\",\"params\":{\"initialSettlementData\":\"the initial settlement data (e.g. initial market data at which trade was incepted)\",\"paymentAmount\":\"is the payment amount which can be positive or negative (viewed from the inceptor)\",\"position\":\"is the position the inceptor has in that trade\",\"tradeData\":\"a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\",\"withParty\":\"is the party the inceptor wants to trade with\"},\"returns\":{\"_0\":\"the tradeId uniquely determining this trade.\"}},\"initiateSettlement()\":{\"details\":\"emits a {SettlementRequested}\"},\"performSettlement(int256,string)\":{\"details\":\"perform settlement checks, may initiate transfers and emits {SettlementEvaluated}\",\"params\":{\"settlementAmount\":\"the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.\",\"settlementData\":\". the tripple (product, previousSettlementData, settlementData) determines the settlementAmount.\"}},\"requestTradeTermination(string,int256,string)\":{\"details\":\"emits a {TradeTerminationRequest}\",\"params\":{\"terminationPayment\":\"an agreed termination amount (viewed from the requester)\",\"terminationTerms\":\"the termination terms to be stored on chain.\",\"tradeId\":\"the trade identifier which is supposed to be terminated\"}}},\"title\":\"ERC6123 Smart Derivative Contract\",\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"afterTransfer(bool,string)\":{\"notice\":\"May get called from outside to to finish a transfer (callback). The trade decides on how to proceed based on success flag\"},\"cancelTrade(address,string,int256,int256,string)\":{\"notice\":\"Performs a matching of provided trade data and settlement data of a previous trade inception. Required to be called by inceptor.\"},\"cancelTradeTermination(string,int256,string)\":{\"notice\":\"Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed\"},\"confirmTrade(address,string,int256,int256,string)\":{\"notice\":\"Performs a matching of provided trade data and settlement data of a previous trade inception\"},\"confirmTradeTermination(string,int256,string)\":{\"notice\":\"Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed\"},\"inceptTrade(address,string,int256,int256,string)\":{\"notice\":\"Incepts a trade, stores trade data\"},\"initiateSettlement()\":{\"notice\":\"Called to trigger a (maybe external) valuation of the underlying contract and afterwards the according settlement process\"},\"performSettlement(int256,string)\":{\"notice\":\"Called to trigger according settlement on chain-balances callback for initiateSettlement() event handler\"},\"requestTradeTermination(string,int256,string)\":{\"notice\":\"Called from a counterparty to request a mutual termination\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IERC6123.sol\":\"IERC6123\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IERC6123.sol\":{\"keccak256\":\"0xe1ae924d1c668c8d7dee2452b56e6ac55714912ed9eedc116025a8684f59ebd3\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://d6f1f20a58a5a635327507e26165d2bcb1afe9a92be42b64b93e815e06368ae6\",\"dweb:/ipfs/QmX3etPN1GTHLaibPhoLwrwna6ondqqZoci4Ax8cQfB8MH\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"kind": "user",
+						"methods": {
+							"afterTransfer(bool,string)": {
+								"notice": "May get called from outside to to finish a transfer (callback). The trade decides on how to proceed based on success flag"
+							},
+							"cancelTrade(address,string,int256,int256,string)": {
+								"notice": "Performs a matching of provided trade data and settlement data of a previous trade inception. Required to be called by inceptor."
+							},
+							"cancelTradeTermination(string,int256,string)": {
+								"notice": "Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed"
+							},
+							"confirmTrade(address,string,int256,int256,string)": {
+								"notice": "Performs a matching of provided trade data and settlement data of a previous trade inception"
+							},
+							"confirmTradeTermination(string,int256,string)": {
+								"notice": "Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed"
+							},
+							"inceptTrade(address,string,int256,int256,string)": {
+								"notice": "Incepts a trade, stores trade data"
+							},
+							"initiateSettlement()": {
+								"notice": "Called to trigger a (maybe external) valuation of the underlying contract and afterwards the according settlement process"
+							},
+							"performSettlement(int256,string)": {
+								"notice": "Called to trigger according settlement on chain-balances callback for initiateSettlement() event handler"
+							},
+							"requestTradeTermination(string,int256,string)": {
+								"notice": "Called from a counterparty to request a mutual termination"
+							}
+						},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/interfaces/IERC6123.sol": {
+				"ast": {
+					"absolutePath": "contracts/interfaces/IERC6123.sol",
+					"exportedSymbols": {
+						"IERC6123": [
+							199
+						]
+					},
+					"id": 200,
+					"license": "UNLICENSED",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"^",
+								"0.8",
+								".19"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "39:24:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IERC6123",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"documentation": {
+								"id": 2,
+								"nodeType": "StructuredDocumentation",
+								"src": "214:3132:0",
+								"text": " @title ERC6123 Smart Derivative Contract\n @dev Interface specification for a Smart Derivative Contract, which specifies the post-trade live cycle of an OTC financial derivative in a completely deterministic way.\n A Smart Derivative Contract (SDC) is a deterministic settlement protocol which aims is to remove many inefficiencies in (collateralized) financial transactions.\n Settlement (Delivery versus payment) and Counterparty Credit Risk are removed by construction.\n Special Case OTC-Derivatives: In case of a collateralized OTC derivative the SDC nets contract-based and collateral flows . As result, the SDC generates a stream of\n reflecting the settlement of a referenced underlying. The settlement cash flows may be daily (which is the standard frequency in traditional markets)\n or at higher frequencies.\n With each settlement flow the change is the (discounting adjusted) net present value of the underlying contract is exchanged and the value of the contract is reset to zero.\n To automatically process settlement, parties need to provide sufficient initial funding and termination fees at the\n beginning of each settlement cycle. Through a settlement cycle the margin amounts are locked. Simplified, the contract reverts the classical scheme of\n 1) underlying valuation, then 2) funding of a margin call to\n 1) pre-funding of a margin buffer (a token), then 2) settlement.\n A SDC may automatically terminates the financial contract if there is insufficient pre-funding or if the settlement amount exceeds a\n prefunded margin balance. Beyond mutual termination is also intended by the function specification.\n Events and Functionality specify the entire live cycle: TradeInception, TradeConfirmation, TradeTermination, Margin-Account-Mechanics, Valuation and Settlement.\n The process can be described by time points and time-intervals which are associated with well defined states:\n <ol>\n  <li>t < T* (befrore incept).\n  </li>\n  <li>\n      The process runs in cycles. Let i = 0,1,2,... denote the index of the cycle. Within each cycle there are times\n      T_{i,0}, T_{i,1}, T_{i,2}, T_{i,3} with T_{i,1} = The Activation of the Trade (initial funding provided), T_{i,1} = request valuation from oracle, T_{i,2} = perform settlement on given valuation, T_{i+1,0} = T_{i,3}.\n  </li>\n  <li>\n      Given this time discretization the states are assigned to time points and time intervalls:\n      <dl>\n          <dt>Idle</dt>\n          <dd>Before incept or after terminate</dd>\n          <dt>Initiation</dt>\n          <dd>T* < t < T_{0}, where T* is time of incept and T_{0} = T_{0,0}</dd>\n          <dt>InTransfer (Initiation Phase)</dt>\n          <dd>T_{i,0} < t < T_{i,1}</dd>\n          <dt>Settled</dt>\n          <dd>t = T_{i,1}</dd>\n          <dt>ValuationAndSettlement</dt>\n          <dd>T_{i,1} < t < T_{i,2}</dd>\n          <dt>InTransfer (Settlement Phase)</dt>\n          <dd>T_{i,2} < t < T_{i,3}</dd>\n          <dt>Settled</dt>\n          <dd>t = T_{i,3}</dd>\n      </dl>\n  </li>\n </ol>"
+							},
+							"fullyImplemented": false,
+							"id": 199,
+							"linearizedBaseContracts": [
+								199
+							],
+							"name": "IERC6123",
+							"nameLocation": "3358:8:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 3,
+										"nodeType": "StructuredDocumentation",
+										"src": "3567:761:0",
+										"text": " @dev Emitted  when a new trade is incepted from a eligible counterparty\n @param initiator is the address from which trade was incepted\n @param withParty is the party the inceptor wants to trade with\n @param tradeId is the trade ID (e.g. generated internally)\n @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n @param position is the position the inceptor has in that trade\n @param paymentAmount is the payment amount which can be positive or negative (viewed from the inceptor)\n @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)"
+									},
+									"eventSelector": "2a1c9ffcfb612ae02061c9c984da3814098f6cfb22c68895d7bb548ddbfd094e",
+									"id": 19,
+									"name": "TradeIncepted",
+									"nameLocation": "4339:13:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 18,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 5,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "initiator",
+												"nameLocation": "4361:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 19,
+												"src": "4353:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 4,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "4353:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 7,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "withParty",
+												"nameLocation": "4380:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 19,
+												"src": "4372:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 6,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "4372:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 9,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "4398:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 19,
+												"src": "4391:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 8,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "4391:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 11,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeData",
+												"nameLocation": "4414:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 19,
+												"src": "4407:16:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 10,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "4407:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 13,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "position",
+												"nameLocation": "4429:8:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 19,
+												"src": "4425:12:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 12,
+													"name": "int",
+													"nodeType": "ElementaryTypeName",
+													"src": "4425:3:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 15,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "paymentAmount",
+												"nameLocation": "4446:13:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 19,
+												"src": "4439:20:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 14,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "4439:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 17,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "initialSettlementData",
+												"nameLocation": "4468:21:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 19,
+												"src": "4461:28:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 16,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "4461:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "4352:138:0"
+									},
+									"src": "4333:158:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 20,
+										"nodeType": "StructuredDocumentation",
+										"src": "4497:184:0",
+										"text": " @dev Emitted when an incepted trade is confirmed by the opposite counterparty\n @param confirmer the confirming party\n @param tradeId the trade identifier"
+									},
+									"eventSelector": "02f9110550f3374364c85539074b740b7bfed285798d152502c5f2dfd745cf00",
+									"id": 26,
+									"name": "TradeConfirmed",
+									"nameLocation": "4692:14:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 25,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 22,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "confirmer",
+												"nameLocation": "4715:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 26,
+												"src": "4707:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 21,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "4707:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 24,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "4733:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 26,
+												"src": "4726:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 23,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "4726:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "4706:35:0"
+									},
+									"src": "4686:56:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 27,
+										"nodeType": "StructuredDocumentation",
+										"src": "4748:208:0",
+										"text": " @dev Emitted when an incepted trade is canceled by the incepting counterparty\n @param initiator is the address from which trade was canceled\n @param tradeId the trade identifier"
+									},
+									"eventSelector": "b97ebea18f48d75569ccb549a1079765ee3a73567c656c017da2aad5e75652b7",
+									"id": 33,
+									"name": "TradeCanceled",
+									"nameLocation": "4967:13:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 32,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 29,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "initiator",
+												"nameLocation": "4989:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 33,
+												"src": "4981:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 28,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "4981:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 31,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "5007:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 33,
+												"src": "5000:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 30,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "5000:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "4980:35:0"
+									},
+									"src": "4961:55:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 34,
+										"nodeType": "StructuredDocumentation",
+										"src": "5078:186:0",
+										"text": " @dev Emitted when a confirmed trade is set to active - e.g. when termination fee amounts are provided\n @param tradeId the trade identifier of the activated trade"
+									},
+									"eventSelector": "eefeb5e80b2ac9c40a1d39f3efa3f048cc00bc2d3b0725ad393fc9c072805932",
+									"id": 38,
+									"name": "TradeActivated",
+									"nameLocation": "5275:14:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 37,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 36,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "5297:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 38,
+												"src": "5290:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 35,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "5290:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "5289:16:0"
+									},
+									"src": "5269:37:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 39,
+										"nodeType": "StructuredDocumentation",
+										"src": "5312:252:0",
+										"text": " @dev Emitted when an active trade is terminated\n @param tradeId the trade identifier of the activated trade\n @param cause string holding data associated with the termination, e.g. transactionData upon a failed transaction"
+									},
+									"eventSelector": "bb89099f1a0e13d3324fc20c7539ebec0e34cd798e98a31c4da927d0f8d0fc6e",
+									"id": 45,
+									"name": "TradeTerminated",
+									"nameLocation": "5575:15:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 44,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 41,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "5598:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 45,
+												"src": "5591:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 40,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "5591:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 43,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "cause",
+												"nameLocation": "5614:5:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 45,
+												"src": "5607:12:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 42,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "5607:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "5590:30:0"
+									},
+									"src": "5569:52:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 46,
+										"nodeType": "StructuredDocumentation",
+										"src": "5679:350:0",
+										"text": " @dev Emitted when a settlement gets requested\n @param initiator the address of the requesting party\n @param tradeData holding the stored trade data\n @param lastSettlementData holding the settlementdata from previous settlement (next settlement will be the increment of next valuation compared to former valuation)"
+									},
+									"eventSelector": "13a77d701a81795a91b7d1b3607082f44ceb3effa42d1fe9ff18f1a8c111e969",
+									"id": 54,
+									"name": "SettlementRequested",
+									"nameLocation": "6040:19:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 53,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 48,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "initiator",
+												"nameLocation": "6068:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 54,
+												"src": "6060:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 47,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "6060:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 50,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeData",
+												"nameLocation": "6086:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 54,
+												"src": "6079:16:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 49,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "6079:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 52,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "lastSettlementData",
+												"nameLocation": "6104:18:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 54,
+												"src": "6097:25:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 51,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "6097:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "6059:64:0"
+									},
+									"src": "6034:90:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 55,
+										"nodeType": "StructuredDocumentation",
+										"src": "6130:508:0",
+										"text": " @dev Emitted when Settlement has been valued and settlement phase is initiated\n @param initiator the address of the requesting party\n @param settlementAmount the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.\n @param settlementData. the tripple (product, previousSettlementData, settlementData) determines the settlementAmount."
+									},
+									"eventSelector": "752a06f360d89e4ed54e5427b88f42c8fc9bf5d1b79904fe9d12701e029fe48d",
+									"id": 63,
+									"name": "SettlementEvaluated",
+									"nameLocation": "6649:19:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 62,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 57,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "initiator",
+												"nameLocation": "6677:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 63,
+												"src": "6669:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 56,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "6669:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 59,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "settlementAmount",
+												"nameLocation": "6695:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 63,
+												"src": "6688:23:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 58,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "6688:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 61,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "settlementData",
+												"nameLocation": "6720:14:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 63,
+												"src": "6713:21:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 60,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "6713:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "6668:67:0"
+									},
+									"src": "6643:93:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 64,
+										"nodeType": "StructuredDocumentation",
+										"src": "6742:73:0",
+										"text": " @dev Emitted when settlement process has been finished"
+									},
+									"eventSelector": "87bb0e49480b03e4eb83fe0ff00693fb943e3b8fa16f2cb66d25b4104d106556",
+									"id": 68,
+									"name": "SettlementTransferred",
+									"nameLocation": "6826:21:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 67,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 66,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "transactionData",
+												"nameLocation": "6855:15:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 68,
+												"src": "6848:22:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 65,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "6848:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "6847:24:0"
+									},
+									"src": "6820:52:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 69,
+										"nodeType": "StructuredDocumentation",
+										"src": "6878:73:0",
+										"text": " @dev Emitted when settlement process has been finished"
+									},
+									"eventSelector": "9f14910737ab52ecc9b06df8f9104ac5fc62376b6d417450137bd49641c086bf",
+									"id": 73,
+									"name": "SettlementFailed",
+									"nameLocation": "6962:16:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 72,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 71,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "transactionData",
+												"nameLocation": "6986:15:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 73,
+												"src": "6979:22:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 70,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "6979:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "6978:24:0"
+									},
+									"src": "6956:47:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 74,
+										"nodeType": "StructuredDocumentation",
+										"src": "7056:394:0",
+										"text": " @dev Emitted when a counterparty proactively requests an early termination of the underlying trade\n @param initiator the address of the requesting party\n @param terminationPayment an agreed termination amount (viewed from the requester)\n @param tradeId the trade identifier which is supposed to be terminated\n @param terminationTerms termination terms"
+									},
+									"eventSelector": "2296534d3df387ae4ae69f41bf423ee65754b1c234537082a084761f0dcaf138",
+									"id": 84,
+									"name": "TradeTerminationRequest",
+									"nameLocation": "7461:23:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 83,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 76,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "initiator",
+												"nameLocation": "7493:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 84,
+												"src": "7485:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 75,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "7485:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 78,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "7511:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 84,
+												"src": "7504:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 77,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "7504:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 80,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "terminationPayment",
+												"nameLocation": "7527:18:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 84,
+												"src": "7520:25:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 79,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "7520:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 82,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "terminationTerms",
+												"nameLocation": "7554:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 84,
+												"src": "7547:23:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 81,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "7547:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "7484:87:0"
+									},
+									"src": "7455:117:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 85,
+										"nodeType": "StructuredDocumentation",
+										"src": "7578:434:0",
+										"text": " @dev Emitted when early termination request is confirmed by the opposite party\n @param confirmer the party which confirms the trade termination\n @param tradeId the trade identifier which is supposed to be terminated\n @param terminationPayment an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)\n @param terminationTerms termination terms"
+									},
+									"eventSelector": "c953dbf4723a8ac8a4d5b8a1eb3e75fd09a147cfbf9efbf39782e8d257a7ffa0",
+									"id": 95,
+									"name": "TradeTerminationConfirmed",
+									"nameLocation": "8023:25:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 94,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 87,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "confirmer",
+												"nameLocation": "8057:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 95,
+												"src": "8049:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 86,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "8049:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 89,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "8075:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 95,
+												"src": "8068:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 88,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "8068:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 91,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "terminationPayment",
+												"nameLocation": "8091:18:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 95,
+												"src": "8084:25:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 90,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "8084:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 93,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "terminationTerms",
+												"nameLocation": "8118:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 95,
+												"src": "8111:23:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 92,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "8111:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "8048:87:0"
+									},
+									"src": "8017:119:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 96,
+										"nodeType": "StructuredDocumentation",
+										"src": "8142:304:0",
+										"text": " @dev Emitted when a counterparty cancels its requests an early termination of the underlying trade\n @param initiator the address of the requesting party\n @param tradeId the trade identifier which is supposed to be terminated\n @param terminationTerms termination terms"
+									},
+									"eventSelector": "0bf0316e30055987a1da1f06c48c2cbd289a8009806806ef4506435c3d565c0c",
+									"id": 104,
+									"name": "TradeTerminationCanceled",
+									"nameLocation": "8457:24:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 103,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 98,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "initiator",
+												"nameLocation": "8490:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 104,
+												"src": "8482:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 97,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "8482:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 100,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "8508:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 104,
+												"src": "8501:14:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 99,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "8501:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 102,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "terminationTerms",
+												"nameLocation": "8524:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 104,
+												"src": "8517:23:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 101,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "8517:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "8481:60:0"
+									},
+									"src": "8451:91:0"
+								},
+								{
+									"documentation": {
+										"id": 105,
+										"nodeType": "StructuredDocumentation",
+										"src": "8728:699:0",
+										"text": " @notice Incepts a trade, stores trade data\n @dev emits a {TradeIncepted} event\n @param withParty is the party the inceptor wants to trade with\n @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n @param position is the position the inceptor has in that trade\n @param paymentAmount is the payment amount which can be positive or negative (viewed from the inceptor)\n @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)\n @return the tradeId uniquely determining this trade."
+									},
+									"functionSelector": "ec11c4e9",
+									"id": 120,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "inceptTrade",
+									"nameLocation": "9441:11:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 116,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 107,
+												"mutability": "mutable",
+												"name": "withParty",
+												"nameLocation": "9461:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 120,
+												"src": "9453:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 106,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "9453:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 109,
+												"mutability": "mutable",
+												"name": "tradeData",
+												"nameLocation": "9486:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 120,
+												"src": "9472:23:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 108,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "9472:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 111,
+												"mutability": "mutable",
+												"name": "position",
+												"nameLocation": "9501:8:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 120,
+												"src": "9497:12:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 110,
+													"name": "int",
+													"nodeType": "ElementaryTypeName",
+													"src": "9497:3:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 113,
+												"mutability": "mutable",
+												"name": "paymentAmount",
+												"nameLocation": "9518:13:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 120,
+												"src": "9511:20:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 112,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "9511:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 115,
+												"mutability": "mutable",
+												"name": "initialSettlementData",
+												"nameLocation": "9547:21:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 120,
+												"src": "9533:35:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 114,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "9533:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "9452:117:0"
+									},
+									"returnParameters": {
+										"id": 119,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 118,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 120,
+												"src": "9588:13:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 117,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "9588:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "9587:15:0"
+									},
+									"scope": 199,
+									"src": "9432:171:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 121,
+										"nodeType": "StructuredDocumentation",
+										"src": "9609:892:0",
+										"text": " @notice Performs a matching of provided trade data and settlement data of a previous trade inception\n @dev emits a {TradeConfirmed} event if trade data match and emits a {TradeActivated} if trade becomes active or {TradeTerminated} if not\n @param withParty is the party the confirmer wants to trade with\n @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n @param position is the position the confirmer has in that trade (negative of the position the inceptor has in the trade)\n @param paymentAmount is the payment amount which can be positive or negative (viewed from the confirmer, negative of the inceptor's view)\n @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)"
+									},
+									"functionSelector": "858f0e93",
+									"id": 134,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "confirmTrade",
+									"nameLocation": "10516:12:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 132,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 123,
+												"mutability": "mutable",
+												"name": "withParty",
+												"nameLocation": "10537:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 134,
+												"src": "10529:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 122,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "10529:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 125,
+												"mutability": "mutable",
+												"name": "tradeData",
+												"nameLocation": "10562:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 134,
+												"src": "10548:23:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 124,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "10548:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 127,
+												"mutability": "mutable",
+												"name": "position",
+												"nameLocation": "10577:8:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 134,
+												"src": "10573:12:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 126,
+													"name": "int",
+													"nodeType": "ElementaryTypeName",
+													"src": "10573:3:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 129,
+												"mutability": "mutable",
+												"name": "paymentAmount",
+												"nameLocation": "10594:13:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 134,
+												"src": "10587:20:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 128,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "10587:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 131,
+												"mutability": "mutable",
+												"name": "initialSettlementData",
+												"nameLocation": "10623:21:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 134,
+												"src": "10609:35:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 130,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "10609:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "10528:117:0"
+									},
+									"returnParameters": {
+										"id": 133,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "10654:0:0"
+									},
+									"scope": 199,
+									"src": "10507:148:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 135,
+										"nodeType": "StructuredDocumentation",
+										"src": "10661:815:0",
+										"text": " @notice Performs a matching of provided trade data and settlement data of a previous trade inception. Required to be called by inceptor.\n @dev emits a {TradeCanceled} event if trade data match and msg.sender agrees with the party that incepted the trade.\n @param withParty is the party the inceptor wants to trade with\n @param tradeData a description of the trade specification e.g. in xml format, suggested structure - see assets/eip-6123/doc/sample-tradedata-filestructure.xml\n @param position is the position the inceptor has in that trade\n @param paymentAmount is the payment amount which can be positive or negative (viewed from the inceptor)\n @param initialSettlementData the initial settlement data (e.g. initial market data at which trade was incepted)"
+									},
+									"functionSelector": "5ccc3114",
+									"id": 148,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "cancelTrade",
+									"nameLocation": "11490:11:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 146,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 137,
+												"mutability": "mutable",
+												"name": "withParty",
+												"nameLocation": "11510:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 148,
+												"src": "11502:17:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 136,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "11502:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 139,
+												"mutability": "mutable",
+												"name": "tradeData",
+												"nameLocation": "11535:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 148,
+												"src": "11521:23:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 138,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "11521:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 141,
+												"mutability": "mutable",
+												"name": "position",
+												"nameLocation": "11550:8:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 148,
+												"src": "11546:12:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 140,
+													"name": "int",
+													"nodeType": "ElementaryTypeName",
+													"src": "11546:3:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 143,
+												"mutability": "mutable",
+												"name": "paymentAmount",
+												"nameLocation": "11567:13:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 148,
+												"src": "11560:20:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 142,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "11560:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 145,
+												"mutability": "mutable",
+												"name": "initialSettlementData",
+												"nameLocation": "11596:21:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 148,
+												"src": "11582:35:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 144,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "11582:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "11501:117:0"
+									},
+									"returnParameters": {
+										"id": 147,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "11627:0:0"
+									},
+									"scope": 199,
+									"src": "11481:147:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 149,
+										"nodeType": "StructuredDocumentation",
+										"src": "11672:190:0",
+										"text": " @notice Called to trigger a (maybe external) valuation of the underlying contract and afterwards the according settlement process\n @dev emits a {SettlementRequested}"
+									},
+									"functionSelector": "c78b432e",
+									"id": 152,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "initiateSettlement",
+									"nameLocation": "11876:18:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 150,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "11894:2:0"
+									},
+									"returnParameters": {
+										"id": 151,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "11905:0:0"
+									},
+									"scope": 199,
+									"src": "11867:39:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 153,
+										"nodeType": "StructuredDocumentation",
+										"src": "11912:576:0",
+										"text": " @notice Called to trigger according settlement on chain-balances callback for initiateSettlement() event handler\n @dev perform settlement checks, may initiate transfers and emits {SettlementEvaluated}\n @param settlementAmount the settlement amount. If settlementAmount > 0 then receivingParty receives this amount from other party. If settlementAmount < 0 then other party receives -settlementAmount from receivingParty.\n @param settlementData. the tripple (product, previousSettlementData, settlementData) determines the settlementAmount."
+									},
+									"functionSelector": "6ba63956",
+									"id": 160,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "performSettlement",
+									"nameLocation": "12502:17:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 158,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 155,
+												"mutability": "mutable",
+												"name": "settlementAmount",
+												"nameLocation": "12527:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 160,
+												"src": "12520:23:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 154,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "12520:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 157,
+												"mutability": "mutable",
+												"name": "settlementData",
+												"nameLocation": "12559:14:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 160,
+												"src": "12545:28:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 156,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "12545:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "12519:55:0"
+									},
+									"returnParameters": {
+										"id": 159,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "12583:0:0"
+									},
+									"scope": 199,
+									"src": "12493:91:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 161,
+										"nodeType": "StructuredDocumentation",
+										"src": "12591:429:0",
+										"text": " @notice May get called from outside to to finish a transfer (callback). The trade decides on how to proceed based on success flag\n @param success tells the protocol whether transfer was successful\n @param transactionData data associtated with the transfer, will be emitted via the events.\n @dev emit a {SettlementTransferred} or a {SettlementFailed} event. May emit a {TradeTerminated} event."
+									},
+									"functionSelector": "6b7e8648",
+									"id": 168,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "afterTransfer",
+									"nameLocation": "13034:13:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 166,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 163,
+												"mutability": "mutable",
+												"name": "success",
+												"nameLocation": "13053:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 168,
+												"src": "13048:12:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bool",
+													"typeString": "bool"
+												},
+												"typeName": {
+													"id": 162,
+													"name": "bool",
+													"nodeType": "ElementaryTypeName",
+													"src": "13048:4:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bool",
+														"typeString": "bool"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 165,
+												"mutability": "mutable",
+												"name": "transactionData",
+												"nameLocation": "13076:15:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 168,
+												"src": "13062:29:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 164,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "13062:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "13047:45:0"
+									},
+									"returnParameters": {
+										"id": 167,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "13101:0:0"
+									},
+									"scope": 199,
+									"src": "13025:77:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 169,
+										"nodeType": "StructuredDocumentation",
+										"src": "13135:375:0",
+										"text": " @notice Called from a counterparty to request a mutual termination\n @dev emits a {TradeTerminationRequest}\n @param tradeId the trade identifier which is supposed to be terminated\n @param terminationPayment an agreed termination amount (viewed from the requester)\n @param terminationTerms the termination terms to be stored on chain."
+									},
+									"functionSelector": "d19e5133",
+									"id": 178,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "requestTradeTermination",
+									"nameLocation": "13524:23:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 176,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 171,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "13562:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 178,
+												"src": "13548:21:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 170,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "13548:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 173,
+												"mutability": "mutable",
+												"name": "terminationPayment",
+												"nameLocation": "13578:18:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 178,
+												"src": "13571:25:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 172,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "13571:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 175,
+												"mutability": "mutable",
+												"name": "terminationTerms",
+												"nameLocation": "13612:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 178,
+												"src": "13598:30:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 174,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "13598:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "13547:82:0"
+									},
+									"returnParameters": {
+										"id": 177,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "13638:0:0"
+									},
+									"scope": 199,
+									"src": "13515:124:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 179,
+										"nodeType": "StructuredDocumentation",
+										"src": "13645:487:0",
+										"text": " @notice Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed\n @dev emits a {TradeTerminationConfirmed}\n @param tradeId the trade identifier which is supposed to be terminated\n @param terminationPayment an agreed termination amount (viewed from the confirmer, negative of the value provided by the requester)\n @param terminationTerms the termination terms to be stored on chain."
+									},
+									"functionSelector": "08f7490c",
+									"id": 188,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "confirmTradeTermination",
+									"nameLocation": "14146:23:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 186,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 181,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "14184:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 188,
+												"src": "14170:21:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 180,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "14170:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 183,
+												"mutability": "mutable",
+												"name": "terminationPayment",
+												"nameLocation": "14200:18:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 188,
+												"src": "14193:25:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 182,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "14193:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 185,
+												"mutability": "mutable",
+												"name": "terminationTerms",
+												"nameLocation": "14234:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 188,
+												"src": "14220:30:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 184,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "14220:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "14169:82:0"
+									},
+									"returnParameters": {
+										"id": 187,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "14260:0:0"
+									},
+									"scope": 199,
+									"src": "14137:124:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 189,
+										"nodeType": "StructuredDocumentation",
+										"src": "14267:414:0",
+										"text": " @notice Called from a party to confirm an incepted termination, which might trigger a final settlement before trade gets closed\n @dev emits a {TradeTerminationCanceled}\n @param tradeId the trade identifier which is supposed to be terminated\n @param terminationPayment an agreed termination amount (viewed from the requester)\n @param terminationTerms the termination terms"
+									},
+									"functionSelector": "838a3b92",
+									"id": 198,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "cancelTradeTermination",
+									"nameLocation": "14695:22:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 196,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 191,
+												"mutability": "mutable",
+												"name": "tradeId",
+												"nameLocation": "14732:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 198,
+												"src": "14718:21:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 190,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "14718:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 193,
+												"mutability": "mutable",
+												"name": "terminationPayment",
+												"nameLocation": "14748:18:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 198,
+												"src": "14741:25:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 192,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "14741:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 195,
+												"mutability": "mutable",
+												"name": "terminationTerms",
+												"nameLocation": "14782:16:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 198,
+												"src": "14768:30:0",
+												"stateVariable": false,
+												"storageLocation": "memory",
+												"typeDescriptions": {
+													"typeIdentifier": "t_string_memory_ptr",
+													"typeString": "string"
+												},
+												"typeName": {
+													"id": 194,
+													"name": "string",
+													"nodeType": "ElementaryTypeName",
+													"src": "14768:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_string_storage_ptr",
+														"typeString": "string"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "14717:82:0"
+									},
+									"returnParameters": {
+										"id": 197,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "14808:0:0"
+									},
+									"scope": 199,
+									"src": "14686:123:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 200,
+							"src": "3348:11463:0",
+							"usedErrors": [],
+							"usedEvents": [
+								19,
+								26,
+								33,
+								38,
+								45,
+								54,
+								63,
+								68,
+								73,
+								84,
+								95,
+								104
+							]
+						}
+					],
+					"src": "39:14772:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

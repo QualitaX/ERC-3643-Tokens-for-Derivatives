@@ -1,0 +1,1113 @@
+{
+	"id": "e40fe1bc106ba79266fed64ea1cda180",
+	"_format": "hh-sol-build-info-1",
+	"solcVersion": "0.8.30",
+	"solcLongVersion": "0.8.30+commit.73712a01",
+	"input": {
+		"language": "Solidity",
+		"sources": {
+			"contracts/interfaces/IERC7586.sol": {
+				"content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.19;\n\ninterface IERC7586 {\n    //-------------------------- Events --------------------------\n    /**\n    * @notice MUST be emitted when interest rates are swapped\n    * @param _account the recipient account to send the interest difference to. MUST be either the `payer` or the `receiver`\n    * @param _amount the interest difference to be transferred\n    */\n    event Swap(address _account, uint256 _amount);\n\n    /**\n    * @notice MUST be emitted when the swap contract is terminated\n    * @param _payer the swap payer\n    * @param _receiver the swap receiver\n    */\n    event TerminateSwap(address indexed _payer, address indexed _receiver);\n\n    //-------------------------- Functions --------------------------\n    /**\n    *  @notice Returns the IRS `payer` account address. The party who agreed to pay fixed interest\n    */\n    function fixedRatePayer() external view returns(address);\n\n    /**\n    *  @notice Returns the IRS `receiver` account address. The party who agreed to pay floating interest\n    */\n    function floatingRatePayer() external view returns(address);\n\n    /**\n    *  @notice Returns the fixed interest rate. All rates MUST be multiplied by 10^(ratesDecimals)\n    */\n    function swapRate() external view returns(int256);\n\n    /**\n    *  @notice Returns the floating rate spread, i.e. the fixed part of the floating interest rate. All rates MUST be multiplied by 10^(ratesDecimals)\n    *          floatingRate = benchmark + spread\n    */\n    function spread() external view returns(int256);\n\n    /**\n    *  @notice Returns the contract address of the settlement currency(Example: USDC contract address).\n    *          Returns the zero address if the contracct is settled in FIAT currency like USD\n    */\n    function settlementCurrency() external view returns(address);\n\n    /**\n    *  @notice Returns the notional amount in unit of asset to be transferred when swapping IRS. This amount serves as the basis for calculating the interest payments, and may not be exchanged\n    *          Example: If the two parties aggreed to swap interest rates in USDC, then the notional amount may be equal to 1,000,000 USDC \n    */\n    function notionalAmount() external view returns(uint256);\n\n    /**\n    *  @notice Returns the starting date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp\n    */\n    function startingDate() external view returns(uint256);\n\n    /**\n    *  @notice Returns the maturity date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp\n    */\n    function maturityDate() external view returns(uint256);\n\n    /**\n    *  @notice Makes swap calculation and transfers the payment to counterparties\n    */\n    function swap() external returns(bool);\n\n    /**\n    *  @notice Terminates the swap contract before its maturity date. MUST be called by either the `payer`or the `receiver`.\n    */\n    function terminateSwap() external;\n}"
+			}
+		},
+		"settings": {
+			"optimizer": {
+				"enabled": true,
+				"runs": 200
+			},
+			"outputSelection": {
+				"*": {
+					"": [
+						"ast"
+					],
+					"*": [
+						"abi",
+						"metadata",
+						"devdoc",
+						"userdoc",
+						"storageLayout",
+						"evm.legacyAssembly",
+						"evm.bytecode",
+						"evm.deployedBytecode",
+						"evm.methodIdentifiers",
+						"evm.gasEstimates",
+						"evm.assembly"
+					]
+				}
+			},
+			"remappings": []
+		}
+	},
+	"output": {
+		"contracts": {
+			"contracts/interfaces/IERC7586.sol": {
+				"IERC7586": {
+					"abi": [
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": false,
+									"internalType": "address",
+									"name": "_account",
+									"type": "address"
+								},
+								{
+									"indexed": false,
+									"internalType": "uint256",
+									"name": "_amount",
+									"type": "uint256"
+								}
+							],
+							"name": "Swap",
+							"type": "event"
+						},
+						{
+							"anonymous": false,
+							"inputs": [
+								{
+									"indexed": true,
+									"internalType": "address",
+									"name": "_payer",
+									"type": "address"
+								},
+								{
+									"indexed": true,
+									"internalType": "address",
+									"name": "_receiver",
+									"type": "address"
+								}
+							],
+							"name": "TerminateSwap",
+							"type": "event"
+						},
+						{
+							"inputs": [],
+							"name": "fixedRatePayer",
+							"outputs": [
+								{
+									"internalType": "address",
+									"name": "",
+									"type": "address"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "floatingRatePayer",
+							"outputs": [
+								{
+									"internalType": "address",
+									"name": "",
+									"type": "address"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "maturityDate",
+							"outputs": [
+								{
+									"internalType": "uint256",
+									"name": "",
+									"type": "uint256"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "notionalAmount",
+							"outputs": [
+								{
+									"internalType": "uint256",
+									"name": "",
+									"type": "uint256"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "settlementCurrency",
+							"outputs": [
+								{
+									"internalType": "address",
+									"name": "",
+									"type": "address"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "spread",
+							"outputs": [
+								{
+									"internalType": "int256",
+									"name": "",
+									"type": "int256"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "startingDate",
+							"outputs": [
+								{
+									"internalType": "uint256",
+									"name": "",
+									"type": "uint256"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "swap",
+							"outputs": [
+								{
+									"internalType": "bool",
+									"name": "",
+									"type": "bool"
+								}
+							],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "swapRate",
+							"outputs": [
+								{
+									"internalType": "int256",
+									"name": "",
+									"type": "int256"
+								}
+							],
+							"stateMutability": "view",
+							"type": "function"
+						},
+						{
+							"inputs": [],
+							"name": "terminateSwap",
+							"outputs": [],
+							"stateMutability": "nonpayable",
+							"type": "function"
+						}
+					],
+					"devdoc": {
+						"events": {
+							"Swap(address,uint256)": {
+								"params": {
+									"_account": "the recipient account to send the interest difference to. MUST be either the `payer` or the `receiver`",
+									"_amount": "the interest difference to be transferred"
+								}
+							},
+							"TerminateSwap(address,address)": {
+								"params": {
+									"_payer": "the swap payer",
+									"_receiver": "the swap receiver"
+								}
+							}
+						},
+						"kind": "dev",
+						"methods": {},
+						"version": 1
+					},
+					"evm": {
+						"assembly": "",
+						"bytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"deployedBytecode": {
+							"functionDebugData": {},
+							"generatedSources": [],
+							"immutableReferences": {},
+							"linkReferences": {},
+							"object": "",
+							"opcodes": "",
+							"sourceMap": ""
+						},
+						"gasEstimates": null,
+						"legacyAssembly": null,
+						"methodIdentifiers": {
+							"fixedRatePayer()": "e6746eb7",
+							"floatingRatePayer()": "92b002fa",
+							"maturityDate()": "d59624b4",
+							"notionalAmount()": "a26c1aa2",
+							"settlementCurrency()": "bead103e",
+							"spread()": "5c25c76c",
+							"startingDate()": "3e3ff7b6",
+							"swap()": "8119c065",
+							"swapRate()": "698518e5",
+							"terminateSwap()": "442447ca"
+						}
+					},
+					"metadata": "{\"compiler\":{\"version\":\"0.8.30+commit.73712a01\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"address\",\"name\":\"_account\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"Swap\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_payer\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"}],\"name\":\"TerminateSwap\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"fixedRatePayer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"floatingRatePayer\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"maturityDate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"notionalAmount\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"settlementCurrency\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"spread\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"startingDate\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"swap\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"swapRate\",\"outputs\":[{\"internalType\":\"int256\",\"name\":\"\",\"type\":\"int256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"terminateSwap\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"events\":{\"Swap(address,uint256)\":{\"params\":{\"_account\":\"the recipient account to send the interest difference to. MUST be either the `payer` or the `receiver`\",\"_amount\":\"the interest difference to be transferred\"}},\"TerminateSwap(address,address)\":{\"params\":{\"_payer\":\"the swap payer\",\"_receiver\":\"the swap receiver\"}}},\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"events\":{\"Swap(address,uint256)\":{\"notice\":\"MUST be emitted when interest rates are swapped\"},\"TerminateSwap(address,address)\":{\"notice\":\"MUST be emitted when the swap contract is terminated\"}},\"kind\":\"user\",\"methods\":{\"fixedRatePayer()\":{\"notice\":\"Returns the IRS `payer` account address. The party who agreed to pay fixed interest\"},\"floatingRatePayer()\":{\"notice\":\"Returns the IRS `receiver` account address. The party who agreed to pay floating interest\"},\"maturityDate()\":{\"notice\":\"Returns the maturity date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp\"},\"notionalAmount()\":{\"notice\":\"Returns the notional amount in unit of asset to be transferred when swapping IRS. This amount serves as the basis for calculating the interest payments, and may not be exchanged          Example: If the two parties aggreed to swap interest rates in USDC, then the notional amount may be equal to 1,000,000 USDC \"},\"settlementCurrency()\":{\"notice\":\"Returns the contract address of the settlement currency(Example: USDC contract address).          Returns the zero address if the contracct is settled in FIAT currency like USD\"},\"spread()\":{\"notice\":\"Returns the floating rate spread, i.e. the fixed part of the floating interest rate. All rates MUST be multiplied by 10^(ratesDecimals)          floatingRate = benchmark + spread\"},\"startingDate()\":{\"notice\":\"Returns the starting date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp\"},\"swap()\":{\"notice\":\"Makes swap calculation and transfers the payment to counterparties\"},\"swapRate()\":{\"notice\":\"Returns the fixed interest rate. All rates MUST be multiplied by 10^(ratesDecimals)\"},\"terminateSwap()\":{\"notice\":\"Terminates the swap contract before its maturity date. MUST be called by either the `payer`or the `receiver`.\"}},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IERC7586.sol\":\"IERC7586\"},\"evmVersion\":\"prague\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[]},\"sources\":{\"contracts/interfaces/IERC7586.sol\":{\"keccak256\":\"0x9e78a1373e9b6e56dbc72267e9e93cb456755310c7ae8e1b3489bbd822e0a666\",\"license\":\"UNLICENSED\",\"urls\":[\"bzz-raw://a81bac95d58e8351e73241042cd20c8763fa54456b232d4121829ce631230abd\",\"dweb:/ipfs/QmZYPXCamSH9ZpuRSLxN96AsU16smS3zB5a9gWD3A65DPW\"]}},\"version\":1}",
+					"storageLayout": {
+						"storage": [],
+						"types": null
+					},
+					"userdoc": {
+						"events": {
+							"Swap(address,uint256)": {
+								"notice": "MUST be emitted when interest rates are swapped"
+							},
+							"TerminateSwap(address,address)": {
+								"notice": "MUST be emitted when the swap contract is terminated"
+							}
+						},
+						"kind": "user",
+						"methods": {
+							"fixedRatePayer()": {
+								"notice": "Returns the IRS `payer` account address. The party who agreed to pay fixed interest"
+							},
+							"floatingRatePayer()": {
+								"notice": "Returns the IRS `receiver` account address. The party who agreed to pay floating interest"
+							},
+							"maturityDate()": {
+								"notice": "Returns the maturity date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp"
+							},
+							"notionalAmount()": {
+								"notice": "Returns the notional amount in unit of asset to be transferred when swapping IRS. This amount serves as the basis for calculating the interest payments, and may not be exchanged          Example: If the two parties aggreed to swap interest rates in USDC, then the notional amount may be equal to 1,000,000 USDC "
+							},
+							"settlementCurrency()": {
+								"notice": "Returns the contract address of the settlement currency(Example: USDC contract address).          Returns the zero address if the contracct is settled in FIAT currency like USD"
+							},
+							"spread()": {
+								"notice": "Returns the floating rate spread, i.e. the fixed part of the floating interest rate. All rates MUST be multiplied by 10^(ratesDecimals)          floatingRate = benchmark + spread"
+							},
+							"startingDate()": {
+								"notice": "Returns the starting date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp"
+							},
+							"swap()": {
+								"notice": "Makes swap calculation and transfers the payment to counterparties"
+							},
+							"swapRate()": {
+								"notice": "Returns the fixed interest rate. All rates MUST be multiplied by 10^(ratesDecimals)"
+							},
+							"terminateSwap()": {
+								"notice": "Terminates the swap contract before its maturity date. MUST be called by either the `payer`or the `receiver`."
+							}
+						},
+						"version": 1
+					}
+				}
+			}
+		},
+		"sources": {
+			"contracts/interfaces/IERC7586.sol": {
+				"ast": {
+					"absolutePath": "contracts/interfaces/IERC7586.sol",
+					"exportedSymbols": {
+						"IERC7586": [
+							74
+						]
+					},
+					"id": 75,
+					"license": "UNLICENSED",
+					"nodeType": "SourceUnit",
+					"nodes": [
+						{
+							"id": 1,
+							"literals": [
+								"solidity",
+								"^",
+								"0.8",
+								".19"
+							],
+							"nodeType": "PragmaDirective",
+							"src": "39:24:0"
+						},
+						{
+							"abstract": false,
+							"baseContracts": [],
+							"canonicalName": "IERC7586",
+							"contractDependencies": [],
+							"contractKind": "interface",
+							"fullyImplemented": false,
+							"id": 74,
+							"linearizedBaseContracts": [
+								74
+							],
+							"name": "IERC7586",
+							"nameLocation": "75:8:0",
+							"nodeType": "ContractDefinition",
+							"nodes": [
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 2,
+										"nodeType": "StructuredDocumentation",
+										"src": "157:260:0",
+										"text": " @notice MUST be emitted when interest rates are swapped\n @param _account the recipient account to send the interest difference to. MUST be either the `payer` or the `receiver`\n @param _amount the interest difference to be transferred"
+									},
+									"eventSelector": "562c219552544ec4c9d7a8eb850f80ea152973e315372bf4999fe7c953ea004f",
+									"id": 8,
+									"name": "Swap",
+									"nameLocation": "428:4:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 7,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 4,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "_account",
+												"nameLocation": "441:8:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 8,
+												"src": "433:16:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 3,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "433:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 6,
+												"indexed": false,
+												"mutability": "mutable",
+												"name": "_amount",
+												"nameLocation": "459:7:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 8,
+												"src": "451:15:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												},
+												"typeName": {
+													"id": 5,
+													"name": "uint256",
+													"nodeType": "ElementaryTypeName",
+													"src": "451:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint256",
+														"typeString": "uint256"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "432:35:0"
+									},
+									"src": "422:46:0"
+								},
+								{
+									"anonymous": false,
+									"documentation": {
+										"id": 9,
+										"nodeType": "StructuredDocumentation",
+										"src": "474:153:0",
+										"text": " @notice MUST be emitted when the swap contract is terminated\n @param _payer the swap payer\n @param _receiver the swap receiver"
+									},
+									"eventSelector": "1aa6c8c6f9b0ff26b8661bdc3ce83e7caf565c568af549f21922fa9561363cc2",
+									"id": 15,
+									"name": "TerminateSwap",
+									"nameLocation": "638:13:0",
+									"nodeType": "EventDefinition",
+									"parameters": {
+										"id": 14,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 11,
+												"indexed": true,
+												"mutability": "mutable",
+												"name": "_payer",
+												"nameLocation": "668:6:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 15,
+												"src": "652:22:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 10,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "652:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											},
+											{
+												"constant": false,
+												"id": 13,
+												"indexed": true,
+												"mutability": "mutable",
+												"name": "_receiver",
+												"nameLocation": "692:9:0",
+												"nodeType": "VariableDeclaration",
+												"scope": 15,
+												"src": "676:25:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 12,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "676:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "651:51:0"
+									},
+									"src": "632:71:0"
+								},
+								{
+									"documentation": {
+										"id": 16,
+										"nodeType": "StructuredDocumentation",
+										"src": "779:109:0",
+										"text": "  @notice Returns the IRS `payer` account address. The party who agreed to pay fixed interest"
+									},
+									"functionSelector": "e6746eb7",
+									"id": 21,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "fixedRatePayer",
+									"nameLocation": "902:14:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 17,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "916:2:0"
+									},
+									"returnParameters": {
+										"id": 20,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 19,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 21,
+												"src": "941:7:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 18,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "941:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "940:9:0"
+									},
+									"scope": 74,
+									"src": "893:57:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 22,
+										"nodeType": "StructuredDocumentation",
+										"src": "956:115:0",
+										"text": "  @notice Returns the IRS `receiver` account address. The party who agreed to pay floating interest"
+									},
+									"functionSelector": "92b002fa",
+									"id": 27,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "floatingRatePayer",
+									"nameLocation": "1085:17:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 23,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "1102:2:0"
+									},
+									"returnParameters": {
+										"id": 26,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 25,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 27,
+												"src": "1127:7:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 24,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "1127:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "1126:9:0"
+									},
+									"scope": 74,
+									"src": "1076:60:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 28,
+										"nodeType": "StructuredDocumentation",
+										"src": "1142:109:0",
+										"text": "  @notice Returns the fixed interest rate. All rates MUST be multiplied by 10^(ratesDecimals)"
+									},
+									"functionSelector": "698518e5",
+									"id": 33,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "swapRate",
+									"nameLocation": "1265:8:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 29,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "1273:2:0"
+									},
+									"returnParameters": {
+										"id": 32,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 31,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 33,
+												"src": "1298:6:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 30,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "1298:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "1297:8:0"
+									},
+									"scope": 74,
+									"src": "1256:50:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 34,
+										"nodeType": "StructuredDocumentation",
+										"src": "1312:210:0",
+										"text": "  @notice Returns the floating rate spread, i.e. the fixed part of the floating interest rate. All rates MUST be multiplied by 10^(ratesDecimals)\n          floatingRate = benchmark + spread"
+									},
+									"functionSelector": "5c25c76c",
+									"id": 39,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "spread",
+									"nameLocation": "1536:6:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 35,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "1542:2:0"
+									},
+									"returnParameters": {
+										"id": 38,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 37,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 39,
+												"src": "1567:6:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_int256",
+													"typeString": "int256"
+												},
+												"typeName": {
+													"id": 36,
+													"name": "int256",
+													"nodeType": "ElementaryTypeName",
+													"src": "1567:6:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_int256",
+														"typeString": "int256"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "1566:8:0"
+									},
+									"scope": 74,
+									"src": "1527:48:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 40,
+										"nodeType": "StructuredDocumentation",
+										"src": "1581:208:0",
+										"text": "  @notice Returns the contract address of the settlement currency(Example: USDC contract address).\n          Returns the zero address if the contracct is settled in FIAT currency like USD"
+									},
+									"functionSelector": "bead103e",
+									"id": 45,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "settlementCurrency",
+									"nameLocation": "1803:18:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 41,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "1821:2:0"
+									},
+									"returnParameters": {
+										"id": 44,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 43,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 45,
+												"src": "1846:7:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_address",
+													"typeString": "address"
+												},
+												"typeName": {
+													"id": 42,
+													"name": "address",
+													"nodeType": "ElementaryTypeName",
+													"src": "1846:7:0",
+													"stateMutability": "nonpayable",
+													"typeDescriptions": {
+														"typeIdentifier": "t_address",
+														"typeString": "address"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "1845:9:0"
+									},
+									"scope": 74,
+									"src": "1794:61:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 46,
+										"nodeType": "StructuredDocumentation",
+										"src": "1861:343:0",
+										"text": "  @notice Returns the notional amount in unit of asset to be transferred when swapping IRS. This amount serves as the basis for calculating the interest payments, and may not be exchanged\n          Example: If the two parties aggreed to swap interest rates in USDC, then the notional amount may be equal to 1,000,000 USDC "
+									},
+									"functionSelector": "a26c1aa2",
+									"id": 51,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "notionalAmount",
+									"nameLocation": "2218:14:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 47,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "2232:2:0"
+									},
+									"returnParameters": {
+										"id": 50,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 49,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 51,
+												"src": "2257:7:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												},
+												"typeName": {
+													"id": 48,
+													"name": "uint256",
+													"nodeType": "ElementaryTypeName",
+													"src": "2257:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint256",
+														"typeString": "uint256"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "2256:9:0"
+									},
+									"scope": 74,
+									"src": "2209:57:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 52,
+										"nodeType": "StructuredDocumentation",
+										"src": "2272:139:0",
+										"text": "  @notice Returns the starting date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp"
+									},
+									"functionSelector": "3e3ff7b6",
+									"id": 57,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "startingDate",
+									"nameLocation": "2425:12:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 53,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "2437:2:0"
+									},
+									"returnParameters": {
+										"id": 56,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 55,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 57,
+												"src": "2462:7:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												},
+												"typeName": {
+													"id": 54,
+													"name": "uint256",
+													"nodeType": "ElementaryTypeName",
+													"src": "2462:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint256",
+														"typeString": "uint256"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "2461:9:0"
+									},
+									"scope": 74,
+									"src": "2416:55:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 58,
+										"nodeType": "StructuredDocumentation",
+										"src": "2477:139:0",
+										"text": "  @notice Returns the maturity date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp"
+									},
+									"functionSelector": "d59624b4",
+									"id": 63,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "maturityDate",
+									"nameLocation": "2630:12:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 59,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "2642:2:0"
+									},
+									"returnParameters": {
+										"id": 62,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 61,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 63,
+												"src": "2667:7:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_uint256",
+													"typeString": "uint256"
+												},
+												"typeName": {
+													"id": 60,
+													"name": "uint256",
+													"nodeType": "ElementaryTypeName",
+													"src": "2667:7:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_uint256",
+														"typeString": "uint256"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "2666:9:0"
+									},
+									"scope": 74,
+									"src": "2621:55:0",
+									"stateMutability": "view",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 64,
+										"nodeType": "StructuredDocumentation",
+										"src": "2682:92:0",
+										"text": "  @notice Makes swap calculation and transfers the payment to counterparties"
+									},
+									"functionSelector": "8119c065",
+									"id": 69,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "swap",
+									"nameLocation": "2788:4:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 65,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "2792:2:0"
+									},
+									"returnParameters": {
+										"id": 68,
+										"nodeType": "ParameterList",
+										"parameters": [
+											{
+												"constant": false,
+												"id": 67,
+												"mutability": "mutable",
+												"name": "",
+												"nameLocation": "-1:-1:-1",
+												"nodeType": "VariableDeclaration",
+												"scope": 69,
+												"src": "2812:4:0",
+												"stateVariable": false,
+												"storageLocation": "default",
+												"typeDescriptions": {
+													"typeIdentifier": "t_bool",
+													"typeString": "bool"
+												},
+												"typeName": {
+													"id": 66,
+													"name": "bool",
+													"nodeType": "ElementaryTypeName",
+													"src": "2812:4:0",
+													"typeDescriptions": {
+														"typeIdentifier": "t_bool",
+														"typeString": "bool"
+													}
+												},
+												"visibility": "internal"
+											}
+										],
+										"src": "2811:6:0"
+									},
+									"scope": 74,
+									"src": "2779:39:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								},
+								{
+									"documentation": {
+										"id": 70,
+										"nodeType": "StructuredDocumentation",
+										"src": "2824:135:0",
+										"text": "  @notice Terminates the swap contract before its maturity date. MUST be called by either the `payer`or the `receiver`."
+									},
+									"functionSelector": "442447ca",
+									"id": 73,
+									"implemented": false,
+									"kind": "function",
+									"modifiers": [],
+									"name": "terminateSwap",
+									"nameLocation": "2973:13:0",
+									"nodeType": "FunctionDefinition",
+									"parameters": {
+										"id": 71,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "2986:2:0"
+									},
+									"returnParameters": {
+										"id": 72,
+										"nodeType": "ParameterList",
+										"parameters": [],
+										"src": "2997:0:0"
+									},
+									"scope": 74,
+									"src": "2964:34:0",
+									"stateMutability": "nonpayable",
+									"virtual": false,
+									"visibility": "external"
+								}
+							],
+							"scope": 75,
+							"src": "65:2935:0",
+							"usedErrors": [],
+							"usedEvents": [
+								8,
+								15
+							]
+						}
+					],
+					"src": "39:2961:0"
+				},
+				"id": 0
+			}
+		}
+	}
+}

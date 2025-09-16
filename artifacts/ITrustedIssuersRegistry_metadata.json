@@ -1,0 +1,347 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "contract IClaimIssuer",
+						"name": "trustedIssuer",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256[]",
+						"name": "claimTopics",
+						"type": "uint256[]"
+					}
+				],
+				"name": "ClaimTopicsUpdated",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "contract IClaimIssuer",
+						"name": "trustedIssuer",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256[]",
+						"name": "claimTopics",
+						"type": "uint256[]"
+					}
+				],
+				"name": "TrustedIssuerAdded",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "contract IClaimIssuer",
+						"name": "trustedIssuer",
+						"type": "address"
+					}
+				],
+				"name": "TrustedIssuerRemoved",
+				"type": "event"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IClaimIssuer",
+						"name": "_trustedIssuer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256[]",
+						"name": "_claimTopics",
+						"type": "uint256[]"
+					}
+				],
+				"name": "addTrustedIssuer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IClaimIssuer",
+						"name": "_trustedIssuer",
+						"type": "address"
+					}
+				],
+				"name": "getTrustedIssuerClaimTopics",
+				"outputs": [
+					{
+						"internalType": "uint256[]",
+						"name": "",
+						"type": "uint256[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getTrustedIssuers",
+				"outputs": [
+					{
+						"internalType": "contract IClaimIssuer[]",
+						"name": "",
+						"type": "address[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "claimTopic",
+						"type": "uint256"
+					}
+				],
+				"name": "getTrustedIssuersForClaimTopic",
+				"outputs": [
+					{
+						"internalType": "contract IClaimIssuer[]",
+						"name": "",
+						"type": "address[]"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_issuer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "_claimTopic",
+						"type": "uint256"
+					}
+				],
+				"name": "hasClaimTopic",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "address",
+						"name": "_issuer",
+						"type": "address"
+					}
+				],
+				"name": "isTrustedIssuer",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IClaimIssuer",
+						"name": "_trustedIssuer",
+						"type": "address"
+					}
+				],
+				"name": "removeTrustedIssuer",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "contract IClaimIssuer",
+						"name": "_trustedIssuer",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256[]",
+						"name": "_claimTopics",
+						"type": "uint256[]"
+					}
+				],
+				"name": "updateIssuerClaimTopics",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {
+				"addTrustedIssuer(address,uint256[])": {
+					"details": "registers a ClaimIssuer contract as trusted claim issuer.  Requires that a ClaimIssuer contract doesn't already exist  Requires that the claimTopics set is not empty  Requires that there is no more than 15 claimTopics  Requires that there is no more than 50 Trusted issuers",
+					"params": {
+						"_claimTopics": "the set of claim topics that the trusted issuer is allowed to emit  This function can only be called by the owner of the Trusted Issuers Registry contract  emits a `TrustedIssuerAdded` event",
+						"_trustedIssuer": "The ClaimIssuer contract address of the trusted claim issuer."
+					}
+				},
+				"getTrustedIssuerClaimTopics(address)": {
+					"details": "Function for getting all the claim topic of trusted claim issuer  Requires the provided ClaimIssuer contract to be registered in the trusted issuers registry.",
+					"params": {
+						"_trustedIssuer": "the trusted issuer concerned."
+					},
+					"returns": {
+						"_0": "The set of claim topics that the trusted issuer is allowed to emit"
+					}
+				},
+				"getTrustedIssuers()": {
+					"details": "Function for getting all the trusted claim issuers stored.",
+					"returns": {
+						"_0": "array of all claim issuers registered."
+					}
+				},
+				"getTrustedIssuersForClaimTopic(uint256)": {
+					"details": "Function for getting all the trusted issuer allowed for a given claim topic.",
+					"params": {
+						"claimTopic": "the claim topic to get the trusted issuers for."
+					},
+					"returns": {
+						"_0": "array of all claim issuer addresses that are allowed for the given claim topic."
+					}
+				},
+				"hasClaimTopic(address,uint256)": {
+					"details": "Function for checking if the trusted claim issuer is allowed  to emit a certain claim topic",
+					"params": {
+						"_claimTopic": "the Claim Topic that has to be checked to know if the `issuer` is allowed to emit it",
+						"_issuer": "the address of the trusted issuer's ClaimIssuer contract"
+					},
+					"returns": {
+						"_0": "true if the issuer is trusted for this claim topic."
+					}
+				},
+				"isTrustedIssuer(address)": {
+					"details": "Checks if the ClaimIssuer contract is trusted",
+					"params": {
+						"_issuer": "the address of the ClaimIssuer contract"
+					},
+					"returns": {
+						"_0": "true if the issuer is trusted, false otherwise."
+					}
+				},
+				"removeTrustedIssuer(address)": {
+					"details": "Removes the ClaimIssuer contract of a trusted claim issuer.  Requires that the claim issuer contract to be registered first",
+					"params": {
+						"_trustedIssuer": "the claim issuer to remove.  This function can only be called by the owner of the Trusted Issuers Registry contract  emits a `TrustedIssuerRemoved` event"
+					}
+				},
+				"updateIssuerClaimTopics(address,uint256[])": {
+					"details": "Updates the set of claim topics that a trusted issuer is allowed to emit.  Requires that this ClaimIssuer contract already exists in the registry  Requires that the provided claimTopics set is not empty  Requires that there is no more than 15 claimTopics",
+					"params": {
+						"_claimTopics": "the set of claim topics that the trusted issuer is allowed to emit  This function can only be called by the owner of the Trusted Issuers Registry contract  emits a `ClaimTopicsUpdated` event",
+						"_trustedIssuer": "the claim issuer to update."
+					}
+				}
+			},
+			"version": 1
+		},
+		"userdoc": {
+			"events": {
+				"ClaimTopicsUpdated(address,uint256[])": {
+					"notice": "this event is emitted when the set of claim topics is changed for a given trusted issuer.  the event is emitted by the updateIssuerClaimTopics function  `trustedIssuer` is the address of the trusted issuer's ClaimIssuer contract  `claimTopics` is the set of claims that the trusted issuer is allowed to emit"
+				},
+				"TrustedIssuerAdded(address,uint256[])": {
+					"notice": "this event is emitted when a trusted issuer is added in the registry.  the event is emitted by the addTrustedIssuer function  `trustedIssuer` is the address of the trusted issuer's ClaimIssuer contract  `claimTopics` is the set of claims that the trusted issuer is allowed to emit"
+				},
+				"TrustedIssuerRemoved(address)": {
+					"notice": "this event is emitted when a trusted issuer is removed from the registry.  the event is emitted by the removeTrustedIssuer function  `trustedIssuer` is the address of the trusted issuer's ClaimIssuer contract"
+				}
+			},
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/Compliance/interfaces/ITrustedIssuersRegistry.sol": "ITrustedIssuersRegistry"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"@onchain-id/solidity/contracts/interface/IClaimIssuer.sol": {
+			"keccak256": "0x8ccf3c556863620c95e81e9a2bead00c7668d5d67f43f4ab9976a29c675e8052",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://c3de232b4a37f5055bc2c99781507afeb2e6acfa824beb187ea70510db081128",
+				"dweb:/ipfs/QmZYJ76FGct8MoKbmLjGHsHms9e8GKMZrZnyUaFLRzvKSe"
+			]
+		},
+		"@onchain-id/solidity/contracts/interface/IERC734.sol": {
+			"keccak256": "0xd9c0a7eaf1425443736d8e42a43ed100c3049b4fbae2b34e65a63138d0919e11",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://8f65bc4e6e90db2cb98b6eff957dd1c241cc82c10808010bc3935c8f54715564",
+				"dweb:/ipfs/Qmf6U5vSP687zfoung8dWUT2msDyaTQ52jVvdaKUoePshR"
+			]
+		},
+		"@onchain-id/solidity/contracts/interface/IERC735.sol": {
+			"keccak256": "0xfa4b3db1797200f8de14bb73813f678eb08589c393af9a9e8e0c7b6165de84ea",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://bb7ec6f7845267803d193fbaf2f2cb93e5ecf11b21af8905511c4363b556084c",
+				"dweb:/ipfs/QmUzzVCpCgtUUKsRtMexVpdBDpi6ujh6uCca9CTcWZeALY"
+			]
+		},
+		"@onchain-id/solidity/contracts/interface/IIdentity.sol": {
+			"keccak256": "0xaab77598ab6230be2e47bbb9541462e47777847ff5254eeb830718dd943d9292",
+			"license": "GPL-3.0",
+			"urls": [
+				"bzz-raw://853ba5bf127bb2e41780d92b163f31677fd632a2e70ca72a3e7c6e3f7a84c460",
+				"dweb:/ipfs/QmXaEveMNcNzf97nfckP6D716aUHVSYNF6e5zdjt4UWvh9"
+			]
+		},
+		"contracts/Compliance/interfaces/ITrustedIssuersRegistry.sol": {
+			"keccak256": "0xf30e778f9af3f6ef9499dbeae9d7c0a15ce0c02ee4762a6923079fcfd84e1c65",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://0b1c7320830a1468f4c86d249c125742e9d4968e9c8849f6556e757346ba5de4",
+				"dweb:/ipfs/QmPxSLK7BNAJu5m4EkuBYE2UeU6DYkFyJPDUHkFpunsAPa"
+			]
+		}
+	},
+	"version": 1
+}

@@ -1,0 +1,261 @@
+{
+	"compiler": {
+		"version": "0.8.30+commit.73712a01"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": false,
+						"internalType": "address",
+						"name": "_account",
+						"type": "address"
+					},
+					{
+						"indexed": false,
+						"internalType": "uint256",
+						"name": "_amount",
+						"type": "uint256"
+					}
+				],
+				"name": "Swap",
+				"type": "event"
+			},
+			{
+				"anonymous": false,
+				"inputs": [
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "_payer",
+						"type": "address"
+					},
+					{
+						"indexed": true,
+						"internalType": "address",
+						"name": "_receiver",
+						"type": "address"
+					}
+				],
+				"name": "TerminateSwap",
+				"type": "event"
+			},
+			{
+				"inputs": [],
+				"name": "fixedRatePayer",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "floatingRatePayer",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "maturityDate",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "notionalAmount",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "settlementCurrency",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "spread",
+				"outputs": [
+					{
+						"internalType": "int256",
+						"name": "",
+						"type": "int256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "startingDate",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "swap",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "swapRate",
+				"outputs": [
+					{
+						"internalType": "int256",
+						"name": "",
+						"type": "int256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "terminateSwap",
+				"outputs": [],
+				"stateMutability": "nonpayable",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"events": {
+				"Swap(address,uint256)": {
+					"params": {
+						"_account": "the recipient account to send the interest difference to. MUST be either the `payer` or the `receiver`",
+						"_amount": "the interest difference to be transferred"
+					}
+				},
+				"TerminateSwap(address,address)": {
+					"params": {
+						"_payer": "the swap payer",
+						"_receiver": "the swap receiver"
+					}
+				}
+			},
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"events": {
+				"Swap(address,uint256)": {
+					"notice": "MUST be emitted when interest rates are swapped"
+				},
+				"TerminateSwap(address,address)": {
+					"notice": "MUST be emitted when the swap contract is terminated"
+				}
+			},
+			"kind": "user",
+			"methods": {
+				"fixedRatePayer()": {
+					"notice": "Returns the IRS `payer` account address. The party who agreed to pay fixed interest"
+				},
+				"floatingRatePayer()": {
+					"notice": "Returns the IRS `receiver` account address. The party who agreed to pay floating interest"
+				},
+				"maturityDate()": {
+					"notice": "Returns the maturity date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp"
+				},
+				"notionalAmount()": {
+					"notice": "Returns the notional amount in unit of asset to be transferred when swapping IRS. This amount serves as the basis for calculating the interest payments, and may not be exchanged          Example: If the two parties aggreed to swap interest rates in USDC, then the notional amount may be equal to 1,000,000 USDC "
+				},
+				"settlementCurrency()": {
+					"notice": "Returns the contract address of the settlement currency(Example: USDC contract address).          Returns the zero address if the contracct is settled in FIAT currency like USD"
+				},
+				"spread()": {
+					"notice": "Returns the floating rate spread, i.e. the fixed part of the floating interest rate. All rates MUST be multiplied by 10^(ratesDecimals)          floatingRate = benchmark + spread"
+				},
+				"startingDate()": {
+					"notice": "Returns the starting date of the swap contract. This is a Unix Timestamp like the one returned by block.timestamp"
+				},
+				"swap()": {
+					"notice": "Makes swap calculation and transfers the payment to counterparties"
+				},
+				"swapRate()": {
+					"notice": "Returns the fixed interest rate. All rates MUST be multiplied by 10^(ratesDecimals)"
+				},
+				"terminateSwap()": {
+					"notice": "Terminates the swap contract before its maturity date. MUST be called by either the `payer`or the `receiver`."
+				}
+			},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/interfaces/IERC7586.sol": "IERC7586"
+		},
+		"evmVersion": "prague",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": true,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/interfaces/IERC7586.sol": {
+			"keccak256": "0x9e78a1373e9b6e56dbc72267e9e93cb456755310c7ae8e1b3489bbd822e0a666",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://a81bac95d58e8351e73241042cd20c8763fa54456b232d4121829ce631230abd",
+				"dweb:/ipfs/QmZYPXCamSH9ZpuRSLxN96AsU16smS3zB5a9gWD3A65DPW"
+			]
+		}
+	},
+	"version": 1
+}
