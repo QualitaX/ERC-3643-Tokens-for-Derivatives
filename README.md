@@ -1,3 +1,17 @@
+# ⚠️ EXPERIMENTAL PROOF OF CONCEPT - NOT FOR PRODUCTION USE ⚠️
+
+**CRITICAL WARNING: This codebase is an experimental proof of concept and contains known security vulnerabilities. DO NOT deploy to mainnet or use with real funds.**
+
+## Known Critical Issues
+- **Security vulnerabilities** that could result in complete loss of funds
+- **Incomplete settlement logic** that may not execute properly
+- **Missing access controls** and reentrancy protections
+- **Unaudited smart contracts** with potential logic errors
+
+**This code is intended for educational and research purposes only.**
+
+---
+
 # Overview
 
 This project implements a smart contract for OTC Bilateral Trading of Uncleared Cash-Settled Forwards that removes counterparty credit risk and automates settlement processes. 
