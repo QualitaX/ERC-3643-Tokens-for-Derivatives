@@ -10,6 +10,13 @@
 
 **This code is intended for research purposes only. The smart contracts have not been audited and contain known vulnerabilities. Use only for testing purposes.**
 
+
+## Research & Documentation
+
+For comprehensive analysis of the opportunities and challenges in implementing smart derivative contracts with compliant tokenized assets, see our detailed research paper:
+
+**[ERC-3643 Tokens for Derivative Collateralization](docs/ERC-3643-Tokens-for-Derivative-Collateralization.pdf)**
+
 ---
 
 # Overview
