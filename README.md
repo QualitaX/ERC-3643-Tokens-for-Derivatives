@@ -72,7 +72,7 @@ The system enables two parties to exchange fixed and floating interest rate paym
 
 | Contract | Purpose | Standard |
 |----------|---------|----------|
-| `ERC6123.sol` | Main SDC implementation | ERC-6123 |
+| `ERC6123.sol` | Main derivative contract implementation | ERC-6123 |
 | `ERC7586.sol` | Dorward/IRS-specific functionality | ERC-7586 |
 | `Factory.sol` | Contract deployment factory | Custom |
 | `ERC6123Storage.sol` | State management | Custom |
