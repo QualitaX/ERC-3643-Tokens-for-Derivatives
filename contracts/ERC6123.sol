@@ -8,17 +8,6 @@ import "./interfaces/IERC6123.sol";
 import "./ERC6123Storage.sol";
 import "./assets/ERC7586.sol";
 
-/**
-* _tradeID: "UYNDF-1756888278777-gok6ai"
-* _irsTokenName: "NDF CTT POC"
-* _irsTokenSymbol: "NCP"
-* _irs: ["0x98287Fb41b60B6374c1021f1E979F6141c97c7De", "0x8053a0f2587a044C19Aa245E70A057CA56881365", "0x97d66cb700D69F3059F2ad482A49A5429F67b7f7", 48000, 0, 5000000, 1757497530, 1757943930]
-* _initial Margin: 50000
-* _Terminati fees: 20000
-* _participantRegistryContractAddress: 0x47a4ACe570473Bf0b569F7E95940a3c1522660d5
-* _ratesContractAddress: 0xb5F0aF3248aC7869aCE74EE5F5b36B1423e532a6
-* _identityRegistryContractAddress: 0x71a027b89bd4fc5245cf38faC4b02C68fD0A9018
-*/
 contract ERC6123 is IERC6123, ERC6123Storage, ERC7586 {
     event CollateralUpdated(string tradeID, address updater, uint256 collateralAmount);
     event LinkWithdrawn(string tradeID, address account, uint256 amount);
