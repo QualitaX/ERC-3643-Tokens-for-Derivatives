@@ -8,7 +8,7 @@
 - **Missing access controls** and reentrancy protections
 - **Unaudited smart contracts** with potential logic errors
 
-**This code is intended for research purposes only.**
+**This code is intended for research purposes only. The smart contracts have not been audited and contain known vulnerabilities. Use only for testing purposes.**
 
 ---
 
