@@ -77,3 +77,28 @@ The system enables two parties to exchange fixed and floating interest rate paym
 | `Factory.sol` | Contract deployment factory | Custom |
 | `ERC6123Storage.sol` | State management | Custom |
 | `ParticipantRegistry.sol` | Identity & compliance | ERC-3643 |
+
+
+## Development Status
+
+### ⚠️ Current Limitations
+
+This proof of concept has several critical limitations that prevent production use:
+
+#### Security Issues
+- **Fund drainage vulnerability** in `withdrawTokens()` function
+- **Missing reentrancy protection** in multiple functions
+- **No SafeMath usage** leading to potential overflow/underflow
+- **Insufficient access controls** for critical operations
+
+## License
+
+This experimental software is provided as-is for educational purposes. See LICENSE file for details.
+
+## Contact
+
+For questions about this proof of concept or collaboration opportunities, please open an issue in this repository.
+
+---
+
+**Remember: This is experimental software. Never use with real funds or deploy to production environments.**
