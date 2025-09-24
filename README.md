@@ -1,6 +1,6 @@
-# ⚠️ EXPERIMENTAL PROOF OF CONCEPT - NOT FOR PRODUCTION USE ⚠️
+## EXPERIMENTAL PROOF OF CONCEPT - NOT FOR PRODUCTION USE️
 
-**CRITICAL WARNING: This codebase is an experimental proof of concept and contains known security vulnerabilities. DO NOT deploy to mainnet or use with real funds.**
+**WARNING: This codebase is an experimental proof of concept and contains known security vulnerabilities. DO NOT deploy to mainnet or use with real funds.**
 
 ## Known Critical Issues
 - **Security vulnerabilities** that could result in complete loss of funds
