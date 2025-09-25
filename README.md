@@ -85,18 +85,6 @@ The system enables two parties to exchange fixed and floating interest rate paym
 | `ParticipantRegistry.sol` | Identity & compliance | ERC-3643 |
 
 
-## Development Status
-
-### ⚠️ Current Limitations
-
-This proof of concept has several critical limitations that prevent production use:
-
-#### Security Issues
-- **Fund drainage vulnerability** in `withdrawTokens()` function
-- **Missing reentrancy protection** in multiple functions
-- **No SafeMath usage** leading to potential overflow/underflow
-- **Insufficient access controls** for critical operations
-
 ## License
 
 This experimental software is provided as-is for educational purposes. See LICENSE file for details.
